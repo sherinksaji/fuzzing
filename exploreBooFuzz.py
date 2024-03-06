@@ -2,68 +2,68 @@ from boofuzz import *
 import random
 
 
-class CustomMutation(Mutation):
-    def mutate_string(self, data):
-        # Implement your custom mutation logic here
-        # This method should return the mutated data
-        return "".join(
-            random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", k=10)
-        )
+# class CustomMutation(Mutation):
+#     def mutate_string(self, data):
+#         # Implement your custom mutation logic here
+#         # This method should return the mutated data
+#         return "".join(
+#             random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", k=10)
+#         )
 
-    def mutate_double(self, data):
-        return str(round(random.uniform(1.0, 100.0), 2))
+#     def mutate_double(self, data):
+#         return str(round(random.uniform(1.0, 100.0), 2))
 
-    def mutate_int(self, data):
-        return random.int(1, 100)
+#     def mutate_int(self, data):
+#         return random.int(1, 100)
 
 
-class CustomFuzzer(FuzzLoggerBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.seed_queue = ["SeedQ"]
-        self.failure_queue = []
+# class CustomFuzzer(FuzzLoggerBase):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.seed_queue = ["SeedQ"]
+#         self.failure_queue = []
 
-    def choose_next(self):
-        return self.seed_queue.pop(0)
+#     def choose_next(self):
+#         return self.seed_queue.pop(0)
 
-    def assign_energy(self, testcase):
-        # Implement energy assignment logic here
-        return 1  # For simplicity, always return 1
+#     def assign_energy(self, testcase):
+#         # Implement energy assignment logic here
+#         return 1  # For simplicity, always return 1
 
-    def mutate_input(self, testcase):
-        mutator = CustomMutation()
-        return mutator.mutate(testcase)
+#     def mutate_input(self, testcase):
+#         mutator = CustomMutation()
+#         return mutator.mutate(testcase)
 
-    def is_interesting(self, testcase):
-        # Implement interestingness check logic here
-        return False
+#     def is_interesting(self, testcase):
+#         # Implement interestingness check logic here
+#         return False
 
-    def fuzz(self):
-        while self.seed_queue:
-            t = self.choose_next()
-            energy = self.assign_energy(t)
-            for i in range(energy):
-                t_prime = self.mutate_input(t)
-                if self.reveals_bug(t_prime):
-                    self.failure_queue.append(t_prime)
-                elif self.is_interesting(t_prime):
-                    self.seed_queue.append(t_prime)
+#     def fuzz(self):
+#         while self.seed_queue:
+#             t = self.choose_next()
+#             energy = self.assign_energy(t)
+#             for i in range(energy):
+#                 t_prime = self.mutate_input(t)
+#                 if self.reveals_bug(t_prime):
+#                     self.failure_queue.append(t_prime)
+#                 elif self.is_interesting(t_prime):
+#                     self.seed_queue.append(t_prime)
 
-    def reveals_bug(self, testcase):
-        # Implement bug/crash detection logic here
-        return False
+#     def reveals_bug(self, testcase):
+#         # Implement bug/crash detection logic here
+#         return False
 
-    def pre_send(self, connection, testcase):
-        # Implement preprocessing logic here
-        pass
+#     def pre_send(self, connection, testcase):
+#         # Implement preprocessing logic here
+#         pass
 
-    def post_send(self, connection, testcase):
-        # Implement post-send logic here
-        pass
+#     def post_send(self, connection, testcase):
+#         # Implement post-send logic here
+#         pass
 
-    def post_testcase(self, connection, testcase):
-        # Implement post-testcase logic here
-        pass
+#     def post_testcase(self, connection, testcase):
+#         # Implement post-testcase logic here
+#         pass
 
 
 # Define the target
@@ -107,9 +107,9 @@ with s_block("Request-Line"):
     # JSON payload starts here
     s_static("{", name="json-start")
     s_static('"name": "', name="json-name-label")
-    s_string(random_name, name="json-name-value", fuzzable=False)
+    s_string(random_name, name="json-name-value")
     s_static('", "info": "', name="json-info-label")
-    s_string(random_info, name="json-info-value", fuzzable=False)
+    s_string(random_info, name="json-info-value")
     s_static('", "price": ', name="json-price-label")
     s_static(random_price, name="json-price-value")
 
