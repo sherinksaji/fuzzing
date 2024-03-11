@@ -10,7 +10,16 @@ class AFL_Fuzzer:
     def ChooseNext(self):
         # insert function
         # use self.seedQ
-        return True
+        
+        # Handle the case when seedQ is empty
+        if not self.seedQ:
+            return None
+        # Find the input t with the maximum path coverage
+        next_input = max(self.seedQ, key=self.seedQ.get)
+        # Remove the extracted input from seedQ
+        del self.seedQ[next_input]
+        # Return the chosen input t
+        return next_input
 
     def AssignEnergy(self, t):
         # insert function
