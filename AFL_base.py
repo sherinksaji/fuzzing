@@ -32,7 +32,7 @@ class AFL_Fuzzer:
         # insert function
         mutator = Mutator()
         #probabilities to be determined after pilot fuzzing, these are just test values set
-        mutator_probabilities = [0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1]
+        mutator_probabilities = [0.1, 0.1, 0.2, 0.2, 0.2, 0.1, 0.1]
         selected_mutator = random.choices(mutator.mutators, weights=mutator_probabilities)[0]
         mutated_input = selected_mutator(t)
         return mutated_input
