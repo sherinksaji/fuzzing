@@ -1,0 +1,12 @@
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/blockwise/server/CoapSampleResourceServer.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/blockwise/client/BasicCoapClient.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/basics/resources/State.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/relayServer/UDPRelay.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/basics/resources/Window.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/multicastDiscovery/MulticastDiscoveryClient.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/basics/Server.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/blockwise/server/SeparateResponseCoapServer.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/basics/Client.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/basics/resources/ObservableResource.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/blockwise/server/BasicCoapServer.java
+/home/marco/SUTD/Term_8/Testing/proj/jcoap/jcoap/ws4d-jcoap-examples/src/org/ws4d/coap/example/blockwise/client/BasicCoapBlockClient.java

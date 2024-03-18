@@ -1,0 +1,15 @@
+org/ws4d/coap/example/basics/Server$1.class
+org/ws4d/coap/example/basics/resources/State.class
+org/ws4d/coap/example/relayServer/UDPRelay.class
+org/ws4d/coap/example/blockwise/client/BasicCoapClient.class
+org/ws4d/coap/example/blockwise/client/BasicCoapBlockClient.class
+org/ws4d/coap/example/basics/Server$2.class
+org/ws4d/coap/example/basics/resources/Window.class
+org/ws4d/coap/example/multicastDiscovery/MulticastDiscoveryClient.class
+org/ws4d/coap/example/basics/resources/ObservableResource.class
+org/ws4d/coap/example/basics/Server.class
+org/ws4d/coap/example/blockwise/server/CoapSampleResourceServer.class
+org/ws4d/coap/example/blockwise/server/SeparateResponseCoapServer.class
+org/ws4d/coap/example/blockwise/server/BasicCoapServer.class
+org/ws4d/coap/example/blockwise/server/SeparateResponseCoapServer$DelayedResponder.class
+org/ws4d/coap/example/basics/Client.class
