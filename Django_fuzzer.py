@@ -10,19 +10,18 @@ class DjangoFuzzer(AFL_Fuzzer):
             super().__init__()
 
         @Override
-        def mutateDjangoInput(self, t: DjangoInput):
-            randomNumber = random.randint(0, 5)
-            if randomNumber == 0:
+        def mutateDjangoInput(self, t: DjangoInput, index):
+            if index == 0:
                 t.name = self.mutate_str(t.name)
 
-            elif randomNumber == 1:
+            elif index == 1:
                 t.info = self.mutate_str(t.info)
 
-            elif randomNumber == 2:
+            elif index == 2:
                 t.price = str(random.randint(1, 100))
 
-            elif randomNumber == 3:
+            elif index == 3:
                 t.csrftoken = self.mutate_str(t.csrftoken)
 
-            elif randomNumber == 4:
+            elif index == 4:
                 t.sessionid = self.mutate_str(t.sessionid)
