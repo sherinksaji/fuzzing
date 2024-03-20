@@ -2,6 +2,8 @@ from copy import deepcopy
 import string
 import random
 from mutator import Mutator
+from Mutator import Mutator
+import random
 
 
 class AFL_Fuzzer:
@@ -18,6 +20,16 @@ class AFL_Fuzzer:
         # insert function
         # use self.seedQ
         return self.seedQ.pop(0)
+
+        # Handle the case when seedQ is empty
+        if not self.seedQ:
+            return None
+        # Find the input t with the maximum path coverage
+        next_input = max(self.seedQ, key=self.seedQ.get)
+        # Remove the extracted input from seedQ
+        del self.seedQ[next_input]
+        # Return the chosen input t
+        return next_input
 
     def AssignEnergy(self, t):
         # insert function
@@ -36,7 +48,14 @@ class AFL_Fuzzer:
 
     def MutateInput(self, t):
         # insert function
-        return True
+        mutator = Mutator()
+        # probabilities to be determined after pilot fuzzing, these are just test values set
+        mutator_probabilities = [0.1, 0.1, 0.2, 0.2, 0.2, 0.1, 0.1]
+        selected_mutator = random.choices(
+            mutator.mutators, weights=mutator_probabilities
+        )[0]
+        mutated_input = selected_mutator(t)
+        return mutated_input
 
     def getBranches(self, t_prime_path):
         branches = []
