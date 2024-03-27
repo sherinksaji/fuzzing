@@ -9,6 +9,7 @@ import os
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
 class CoAPFuzzer:
     def __init__(self, host, port):
         self.host = host
@@ -18,8 +19,11 @@ class CoAPFuzzer:
 
     def fuzz_payload(self, payload, num_bytes):
         # Generate random bytes to replace part of the payload
-        fuzz_bytes = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(num_bytes))
-        return payload[:3] + fuzz_bytes + payload[3 + num_bytes:]
+        fuzz_bytes = "".join(
+            random.choice(string.ascii_letters + string.digits)
+            for _ in range(num_bytes)
+        )
+        return payload[:3] + fuzz_bytes + payload[3 + num_bytes :]
 
     def fuzz_and_send_requests(self, num_requests, num_bytes):
         for _ in range(num_requests):
@@ -27,11 +31,12 @@ class CoAPFuzzer:
             print("Fuzzing payload:", fuzzed_payload)
 
             # Send fuzzed GET request with the fuzzed payload and path "/basic/"
-            response = self.client.get("/basic", payload=fuzzed_payload)
+            response = self.client.get("/basic", payload=fuzzed_payload, header="sand")
             print(response.pretty_print())
 
     def close_connection(self):
         self.client.stop()
+
 
 def main():
     host = "127.0.0.1"
@@ -42,7 +47,7 @@ def main():
     cov.start()
 
     fuzzer = CoAPFuzzer(host, port)
-    #while(1):
+    # while(1):
     #    try:
     fuzzer.fuzz_and_send_requests(num_requests=3, num_bytes=5)
     #    except:
@@ -51,7 +56,7 @@ def main():
     cov.stop()
     cov.save()
     cov.report()
-    #cov.report(show_missing=True)
+    # cov.report(show_missing=True)
 
     # Get coverage data
     cov_data = cov.get_data()
@@ -60,13 +65,22 @@ def main():
     covered_lines_per_file = {}
     for filename in cov_data.measured_files():
         basename = os.path.basename(filename)
-        covered_lines_per_file[basename] = [lineno for lineno in cov_data.lines(filename) if lineno != 0]
+        covered_lines_per_file[basename] = [
+            lineno for lineno in cov_data.lines(filename) if lineno != 0
+        ]
 
     # Print covered lines for each file
     # for filename, covered_lines in covered_lines_per_file.items():
     #     print("File:", filename)
     #     print("Covered lines:", covered_lines)
     print(covered_lines_per_file)
+
+    # Extract arcs for each file
+    arcs_per_file = {}
+    for filename in cov_data.measured_files():
+        basename = os.path.basename(filename)
+        arcs_per_file[basename] = [arc for arc in cov_data.arcs]
+
 
 if __name__ == "__main__":
     main()
