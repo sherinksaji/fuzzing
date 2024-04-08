@@ -15,6 +15,8 @@ class AFL_Fuzzer(ABC):
         self.failureQ = []
         self.executed_lines_history = []
         self.mutator = Mutator()
+        self.pathCoverage = []
+        self.pathCoverage.append(('totalpaths', 0))
 
     @abstractmethod
     def init_seedQ(self):
@@ -40,10 +42,10 @@ class AFL_Fuzzer(ABC):
         return next_input
 
     def AssignEnergy(self, t):
-        # insert function
-
-        return 2
-
+        for i in self.pathCoverage:
+            if isinstance(i[1], list) and t in i[1]:
+                return (512*(1-(i[2]/self.pathCoverage[0][1])))   
+        
     def generate_random_str(self):
         characters = string.ascii_letters + string.digits + string.punctuation
         result_str = "".join(random.choice(characters) for _ in range(self.len_limit))
@@ -111,8 +113,23 @@ class AFL_Fuzzer(ABC):
                 print(t_prime_coverage_data)
                 if crashOrBug:
                     self.FailureQ.append(t_prime)
+                    for i, tup in enumerate(self.pathCoverage):
+                        if t_prime_coverage_data == tup[1]:
+                            tup[0].append(t_prime)
+                            tup[2] +=1
+                            self.pathCoverage[0][1] += 1
+                            changed = True
+                        if i == len(self.pathCoverage)-1 and changed!=True:
+                            self.pathCoverage.append((t_prime_coverage_data, 1))                            
                 elif self.isInteresting(t_prime_coverage_data) == True:
                     self.seedQ.append((t_prime, t_prime_coverage_data))
+                    if t_prime_coverage_data == tup[1]:
+                            tup[0].append(t_prime)
+                            tup[2] +=1
+                            self.pathCoverage[0][1] += 1
+                            changed = True
+                    if i == len(self.pathCoverage)-1 and changed!=True:
+                            self.pathCoverage.append((t_prime_coverage_data, 1))            
         print("all coverage data")
         for i in range(len(self.seedQ)):
             print(self.seedQ[i][1])
