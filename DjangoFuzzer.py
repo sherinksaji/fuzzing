@@ -113,6 +113,7 @@ class DjangoFuzzer(AFL_Fuzzer):
         django_process.wait()
 
         subprocess.run(["coverage", "json"])
+        #subprocess.run(["coverage","lcov"])
 
         with open("coverage.json", "r") as f:
             coverage_data = json.load(f)
