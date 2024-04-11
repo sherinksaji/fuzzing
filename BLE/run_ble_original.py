@@ -7,19 +7,62 @@ import asyncio
 import sys
 import os
 from binascii import hexlify
-import random
-import struct
+
 from bumble.device import Device, Peer
-from bumble.host import Host  # Host controller interface?
-from bumble.gatt import show_services, Characteristic
-from bumble.att import Attribute
+from bumble.host import Host
+from bumble.gatt import show_services
 from bumble.core import ProtocolError
-from bumble.controller import Controller  # controller layer
-from bumble.link import LocalLink  # link layer
+from bumble.controller import Controller
+from bumble.link import LocalLink
 from bumble.transport import open_transport_or_link
 from bumble.utils import AsyncRunner
 from bumble.colors import color
-from ble_fuzzer import BLE_Fuzzer
+
+
+async def write_target(target, attribute, bytes):
+    # Write
+    try:
+        bytes_to_write = bytearray(bytes)
+        await target.write_value(attribute, bytes_to_write, True)
+        print(
+            color(
+                f"[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}",
+                "green",
+            )
+        )
+        return True
+    except ProtocolError as error:
+        print(
+            color(f"[!]  Cannot write attribute 0x{attribute.handle:04X}:", "yellow"),
+            error,
+        )
+    except TimeoutError:
+        print(color("[X] Write Timeout", "red"))
+
+    return False
+
+
+async def read_target(target, attribute):
+    # Read
+    try:
+        read = await target.read_value(attribute)
+        value = read.decode("latin-1")
+        print(
+            color(
+                f"[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}",
+                "cyan",
+            )
+        )
+        return value
+    except ProtocolError as error:
+        print(
+            color(f"[!]  Cannot read attribute 0x{attribute.handle:04X}:", "yellow"),
+            error,
+        )
+    except TimeoutError:
+        print(color("[!] Read Timeout"))
+
+    return None
 
 
 # -----------------------------------------------------------------------------
@@ -64,8 +107,10 @@ class TargetEventsListener(Device.Listener):
         show_services(target.services)
 
         # -------- Main interaction with the target here --------
-        bleFuzzer = BLE_Fuzzer(target, attributes)
-        await bleFuzzer.fuzz()
+        print("=== Read/Write Attributes (Handles)")
+        for attribute in attributes:
+            await write_target(target, attribute, [0x01])
+            await read_target(target, attribute)
 
         print("---------------------------------------------------------------")
         print(color("[OK] Communication Finished", "green"))
@@ -103,7 +148,7 @@ async def main():
 
         # Start BLE scanning here
         await device.power_on()
-        await device.start_scanning()  # this calls "on_advertisement"  #scanning state
+        await device.start_scanning()  # this calls "on_advertisement"
 
         print("Waiting Advertisment from BLE Target")
         while device.listener.got_advertisement is False:
@@ -115,10 +160,7 @@ async def main():
 
         # Start BLE connection here
         print(f"=== Connecting to {target_address}...")
-        await device.connect(
-            target_address
-        )  # this calls "on_connection"   #send these requests: version, feature, length,MTU length --> get supported LL features and capabilities such as max length of packet it can send/receive
-        #
+        await device.connect(target_address)  # this calls "on_connection"
 
         # Wait in an infinite loop
         await hci_source.wait_for_termination()
