@@ -1,4 +1,4 @@
-# Fuzzing
+# 50.053 STV Fuzzing
 ### 3 Project Applications
 1. Constrained Application Protocol (CoAP) implementation
 2. Django Web Application
