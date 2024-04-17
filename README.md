@@ -5,8 +5,8 @@
 3. Bluetooth Low Energy (BLE) Zephyr stack
 
 ### Group Members
-Yu Qin
-Shivani Mariappan
-Sherin Karuvallil Saji
-Mohana Selvakumar
+Yu Qin  
+Shivani Mariappan  
+Sherin Karuvallil Saji  
+Mohana Selvakumar  
 Nithyashree D/O Ramanathan Vairavan
