@@ -7,23 +7,95 @@ import asyncio
 import sys
 import os
 from binascii import hexlify
-import random
-import struct
+import time
+import subprocess
+import os
+import signal
+import glob
+import shutil
+import psutil
+import hashlib
 from bumble.device import Device, Peer
 from bumble.host import Host  # Host controller interface?
 from bumble.gatt import show_services, Characteristic
 from bumble.att import Attribute
-from bumble.core import ProtocolError
+from bumble.core import ProtocolError, TimeoutError
+
 from bumble.controller import Controller  # controller layer
 from bumble.link import LocalLink  # link layer
 from bumble.transport import open_transport_or_link
 from bumble.utils import AsyncRunner
 from bumble.colors import color
+import bumble
 from ble_fuzzer import BLE_Fuzzer
+import time
+import random
+import struct
+from mutator import Mutator
+from AFL_base import AFL_Fuzzer
+from bleInput import BLE_ByteList_Input
+from pyee import EventEmitter
+from bumble.hci import HCI_REMOTE_USER_TERMINATED_CONNECTION_ERROR
+
+
+async def write_target(target, attribute, bytes):
+    # Write
+    try:
+        bytes_to_write = bytearray(bytes)
+        print("bytes_to_write : ", bytes_to_write)
+        await target.write_value(attribute, bytes_to_write, True)
+        print(
+            color(
+                f"[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}",
+                "green",
+            )
+        )
+        return True
+    except ProtocolError as error:
+        print(
+            color(f"[!]  Cannot write attribute 0x{attribute.handle:04X}:", "yellow"),
+            error,
+        )
+
+    except asyncio.exceptions.TimeoutError:
+        print(color("[X] Write Timeout", "red"))
+        # Handle the GATT timeout error gracefully here
+
+    except TimeoutError:
+        print(color("[X] Write Timeout", "red"))
+        zephyr_died()
+
+
+async def read_target(target, attribute):
+    # Read
+    try:
+        read = await target.read_value(attribute)
+        value = read.decode("latin-1")
+        print(
+            color(
+                f"[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}",
+                "cyan",
+            )
+        )
+        return value
+    except ProtocolError as error:
+        print(
+            color(f"[!]  Cannot read attribute 0x{attribute.handle:04X}:", "yellow"),
+            error,
+        )
+    except TimeoutError:
+        print(color("[!] Read Timeout"))
+
+    return None
 
 
 # -----------------------------------------------------------------------------
 class TargetEventsListener(Device.Listener):
+
+    def __init__(self, t_prime):
+        super().__init__()
+        self.t_prime = t_prime
+        self.communicationOver = False
 
     got_advertisement = False
     advertisement = None
@@ -62,26 +134,136 @@ class TargetEventsListener(Device.Listener):
 
         print(color("[OK] Services discovered", "green"))
         show_services(target.services)
+        for attribute in attributes:
 
-        # -------- Main interaction with the target here --------
-        bleFuzzer = BLE_Fuzzer(target, attributes)
-        await bleFuzzer.fuzz()
+            await write_target(target, attribute, self.t_prime.bytelist)
+            if zephyr_died == True:
+                break
+
+            await read_target(target, attribute)
+            if zephyr_died == True:
+                break
 
         print("---------------------------------------------------------------")
         print(color("[OK] Communication Finished", "green"))
         print("---------------------------------------------------------------")
         # ---------------------------------------------------
 
+        self.communicationOver = True
+
+
+# -----------------------------------------------------------------------------
+
+
+def start_zephyr(terminal_emulator):
+    # Set GCOV_PREFIX and GCOV_PREFIX_STRIP environment variables
+    os.environ["GCOV_PREFIX"] = os.getcwd()
+    os.environ["GCOV_PREFIX_STRIP"] = "3"
+
+    # Start zephyr.exe in a new terminal window using the specified terminal emulator
+    print(terminal_emulator)
+
+    subprocess.Popen(
+        [terminal_emulator, "--", "./zephyr.exe", "--bt-dev=127.0.0.1:9000"]
+    )
+
+
+# Find pid of zephyr.exe
+def find_pid(process_name):
+    for pid in os.listdir("/proc"):
+        try:
+            if pid.isdigit():
+                cmdline = open(os.path.join("/proc", pid, "cmdline"), "rb").read()
+                if process_name in cmdline.decode():
+                    return pid
+        except IOError:
+            print("IOError")
+            continue
+    return None
+
+
+def zephyr_died():
+    zephyr_pid = find_pid("zephyr.exe")
+
+    # Kill the process with the obtained pid
+    if zephyr_pid:
+        print("Zephyr still alive")
+        return False
+    else:
+        print("Zephyr died")
+        return True
+
+
+def delete_gcda_files():
+    # Define the directory where .gcda files are located
+    gcda_files_directory = "~/STV-Project/BLE"
+
+    # Expand the tilde (~) to the user's home directory
+    gcda_files_directory = os.path.expanduser(gcda_files_directory)
+
+    # List to store .gcda files
+    gcda_files = []
+
+    # Recursively walk through the directory
+    for root, dirs, files in os.walk(gcda_files_directory):
+        for file in files:
+            if file.endswith(".gcda"):
+                gcda_files.append(os.path.join(root, file))
+
+    for gcda_file in gcda_files:
+        os.remove(gcda_file)
+    print("Deleted generated .gcda files.")
+
+
+def get_lcov():
+
+    zephyr_pid = find_pid("zephyr.exe")
+
+    # Kill the process with the obtained pid
+    if zephyr_pid:
+        print("gg to kill")
+        os.kill(int(zephyr_pid), signal.SIGTERM)
+
+    # # Capture code coverage using lcov
+    fileName = "lcov_" + str(time.time_ns()) + ".info"
+    fullDir = os.path.join("lcov_coverage", fileName)
+
+    lcov_capture_command = (
+        "lcov --capture --directory ./ --output-file "
+        + fullDir
+        + " -q --rc lcov_branch_coverage=1"
+    )
+    os.system(lcov_capture_command)
+
+    # Summarize code coverage
+    lcov_summary_command = "lcov --rc lcov_branch_coverage=1 --summary " + fullDir
+    os.system(lcov_summary_command)
+
+
+def kill9000():
+    port_number = 9000
+    for conn in psutil.net_connections():
+        if conn.laddr.port == port_number and conn.status == "LISTEN":
+            # Get the process associated with the connection
+            process = psutil.Process(conn.pid)
+            # Terminate the process
+            process.terminate()
+            print(
+                f"Process with PID {conn.pid} using port {port_number} has been terminated."
+            )
+            break
+    else:
+        print(f"No process found using port {port_number}.")
+
 
 # -----------------------------------------------------------------------------
 async def main():
-    if len(sys.argv) != 2:
-        print("Usage: run_controller.py <transport-address>")
-        print("example: ./run_ble_tester.py tcp-server:0.0.0.0:9000")
-        return
 
+    revealsCrashOrBug = False
+    t_prime = BLE_ByteList_Input([0x01])
+    tcp_server = "tcp-server:127.0.0.1:9000"
     print(">>> Waiting connection to HCI...")
-    async with await open_transport_or_link(sys.argv[1]) as (hci_source, hci_sink):
+    async with await open_transport_or_link(tcp_server) as (hci_source, hci_sink):
         print(">>> Connected")
 
         # Create a local communication channel between multiple controllers
@@ -99,13 +281,15 @@ async def main():
         # Create a second controller for connection with this test driver (Bumble)
         device.host.controller = Controller("Fuzzer", link=link)
         # Connect class to receive events during communication with target
-        device.listener = TargetEventsListener()
+        device.listener = TargetEventsListener(t_prime)
 
         # Start BLE scanning here
         await device.power_on()
-        await device.start_scanning()  # this calls "on_advertisement"  #scanning state
+        await device.start_scanning()  # this calls "on_advertisement"
 
         print("Waiting Advertisment from BLE Target")
+        device.listener.t_prime = t_prime
+        start_zephyr("gnome-terminal")
         while device.listener.got_advertisement is False:
             await asyncio.sleep(0.5)
         await device.stop_scanning()  # Stop scanning for targets
@@ -115,13 +299,18 @@ async def main():
 
         # Start BLE connection here
         print(f"=== Connecting to {target_address}...")
-        await device.connect(
-            target_address
-        )  # this calls "on_connection"   #send these requests: version, feature, length,MTU length --> get supported LL features and capabilities such as max length of packet it can send/receive
-        #
+        await device.connect(target_address)  # this calls "on_connection"
 
-        # Wait in an infinite loop
-        await hci_source.wait_for_termination()
+        while not device.listener.communicationOver:
+            await asyncio.sleep(0.5)
+
+        if zephyr_died:
+            revealsCrashOrBug = True
+
+        get_lcov()
+        delete_gcda_files()
+
+        kill9000()
 
 
 # -----------------------------------------------------------------------------

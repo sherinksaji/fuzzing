@@ -35,3 +35,15 @@ class BLE_WriteATT_Input(TargetInput):
 
     def getNumOfFuzzableInputs(self):
         return 2
+
+
+class BLE_ByteList_Input(TargetInput):
+    def __init__(self, bytelist):
+        self.bytelist = bytelist
+
+    def __str__(self):
+        return f"""
+        BLE_ByteList(bytelist = {self.bytelist})"""
+
+    def getNumOfFuzzableInputs(self):
+        return 1

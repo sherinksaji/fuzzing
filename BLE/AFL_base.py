@@ -44,7 +44,7 @@ class AFL_Fuzzer(ABC):
     def AssignEnergy(self, t):
         # insert function
 
-        return 2
+        return 10
 
     def generate_random_str(self):
         characters = string.ascii_letters + string.digits + string.punctuation
@@ -105,6 +105,7 @@ class AFL_Fuzzer(ABC):
                 # print("i = ", i)
                 fuzz_var_index = random.randint(0, t.getNumOfFuzzableInputs())
                 t_prime = self.mutate_t(t, fuzz_var_index)
+
                 # print("t_prime after mutate : ", t)
                 crashOrBug, t_prime_coverage_data = await self.runTestRevealsCrashOrBug(
                     t_prime
@@ -114,7 +115,8 @@ class AFL_Fuzzer(ABC):
                 if crashOrBug:
                     self.failureQ.append(t_prime)
                 # elif self.isInteresting(t_prime_coverage_data) == True:
-                self.seedQ.append((t_prime, t_prime_coverage_data))
+                if len(self.seedQ) < 10:
+                    self.seedQ.append((t_prime, t_prime_coverage_data))
         # print("all coverage data")
         # for i in range(len(self.seedQ)):
         #     print(self.seedQ[i][1])

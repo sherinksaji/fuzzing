@@ -1,0 +1,6 @@
+*** Booting Zephyr OS build v3.6.0-rc2-130-g29d7f9fa73da ***
+[00:00:00.000,000] [0m<inf> fs_nvs: 4 Sectors of 4096 bytes[0m
+[00:00:00.000,000] [0m<inf> fs_nvs: alloc wra: 0, fd0[0m
+[00:00:00.000,000] [0m<inf> fs_nvs: data wra: 0, 19[0m
+[00:00:00.000,000] [1;31m<err> bt_hci_core: HCI driver open failed (-111)[0m
+Bluetooth init failed (err -111)

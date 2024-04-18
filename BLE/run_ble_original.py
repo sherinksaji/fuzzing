@@ -6,8 +6,10 @@ import logging
 import asyncio
 import sys
 import os
+import time
+import signal
 from binascii import hexlify
-
+import psutil
 from bumble.device import Device, Peer
 from bumble.host import Host
 from bumble.gatt import show_services
@@ -67,6 +69,9 @@ async def read_target(target, attribute):
 
 # -----------------------------------------------------------------------------
 class TargetEventsListener(Device.Listener):
+    def __init__(self):
+        super().__init__()
+        self.communicationOver = False
 
     got_advertisement = False
     advertisement = None
@@ -107,7 +112,8 @@ class TargetEventsListener(Device.Listener):
         show_services(target.services)
 
         # -------- Main interaction with the target here --------
-        print("=== Read/Write Attributes (Handles)")
+        print("=== No Read/Write Attributes (Handles)")
+
         for attribute in attributes:
             await write_target(target, attribute, [0x01])
             await read_target(target, attribute)
@@ -116,17 +122,117 @@ class TargetEventsListener(Device.Listener):
         print(color("[OK] Communication Finished", "green"))
         print("---------------------------------------------------------------")
         # ---------------------------------------------------
+        self.communicationOver = True
+
+
+# Find pid of zephyr.exe
+
+
+def find_pid(process_name):
+    """Finds the PID for the given process name."""
+    for proc in psutil.process_iter(["pid", "name"]):
+        if process_name in proc.info["name"]:
+            return proc.pid
+    return None
+
+
+def zephyr_died():
+    zephyr_pid = find_pid("zephyr.exe")
+
+    # Kill the process with the obtained pid
+    if zephyr_pid:
+        print("Zephyr still alive")
+        return False
+    else:
+        print("Zephyr died")
+        return True
+
+
+def wait_for_process_to_die(pid, timeout=10):
+    """Waits for the process with the given pid to terminate."""
+    try:
+        process = psutil.Process(pid)
+        process.terminate()  # Sends SIGTERM
+        process.wait(timeout=timeout)  # Waits for the process to terminate
+        print(f"Process {pid} has been terminated.")
+    except psutil.NoSuchProcess:
+        print(f"No such process with pid {pid} to terminate.")
+    except psutil.TimeoutExpired:
+        print(f"Process {pid} did not terminate in {timeout} seconds.")
+        process.kill()  # Sends SIGKILL as a last resort
+        print(f"Process {pid} has been killed.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+
+def get_lcov():
+    zephyr_pid = find_pid("zephyr.exe")
+    if zephyr_pid:
+        print("Attempting to terminate zephyr.exe")
+        wait_for_process_to_die(zephyr_pid)
+
+    # Capture and summarize code coverage using lcov after confirming the process is dead
+    fileName = "lcov_" + str(time.time_ns()) + ".info"
+    fullDir = os.path.join("lcov_coverage", fileName)
+    lcov_capture_command = f"lcov --capture --directory ./ --output-file {fullDir} -q --rc lcov_branch_coverage=1"
+    os.system(lcov_capture_command)
+
+    lcov_summary_command = f"lcov --rc lcov_branch_coverage=1 --summary {fullDir}"
+    os.system(lcov_summary_command)
+
+
+def delete_file(file_path):
+    """Delete a file if it exists."""
+    try:
+        os.remove(file_path)
+        print(f"Deleted file: {file_path}")
+    except OSError as e:
+        print(f"Error deleting file {file_path}: {e}")
+
+
+def delete_gcda_files():
+    # Define the directory where .gcda files are located
+    gcda_files_directory = "~/STV-Project/BLE"
+
+    # Expand the tilde (~) to the user's home directory
+    gcda_files_directory = os.path.expanduser(gcda_files_directory)
+
+    # List to store .gcda files
+    gcda_files = []
+
+    # Recursively walk through the directory
+    for root, dirs, files in os.walk(gcda_files_directory):
+        for file in files:
+            if file.endswith(".gcda"):
+                gcda_files.append(os.path.join(root, file))
+
+    for gcda_file in gcda_files:
+        os.remove(gcda_file)
+    print("Deleted generated .gcda files.")
+
+
+def kill9000():
+    port_number = 9000
+    for conn in psutil.net_connections():
+        if conn.laddr.port == port_number and conn.status == "LISTEN":
+            # Get the process associated with the connection
+            process = psutil.Process(conn.pid)
+            # Terminate the process
+            process.terminate()
+            print(
+                f"Process with PID {conn.pid} using port {port_number} has been terminated."
+            )
+            break
+    else:
+        print(f"No process found using port {port_number}.")
 
 
 # -----------------------------------------------------------------------------
 async def main():
-    if len(sys.argv) != 2:
-        print("Usage: run_controller.py <transport-address>")
-        print("example: ./run_ble_tester.py tcp-server:0.0.0.0:9000")
-        return
 
     print(">>> Waiting connection to HCI...")
-    async with await open_transport_or_link(sys.argv[1]) as (hci_source, hci_sink):
+    tcp_server = "tcp-server:127.0.0.1:9000"
+    async with await open_transport_or_link(tcp_server) as (hci_source, hci_sink):
         print(">>> Connected")
 
         # Create a local communication channel between multiple controllers
@@ -149,6 +255,9 @@ async def main():
         # Start BLE scanning here
         await device.power_on()
         await device.start_scanning()  # this calls "on_advertisement"
+        with open("scan_signal.txt", "w") as signal_file:
+            signal_file.write("scanning")
+        print("Scanning started and signal file created.")
 
         print("Waiting Advertisment from BLE Target")
         while device.listener.got_advertisement is False:
@@ -163,7 +272,16 @@ async def main():
         await device.connect(target_address)  # this calls "on_connection"
 
         # Wait in an infinite loop
-        await hci_source.wait_for_termination()
+        # await hci_source.wait_for_termination()
+        while not device.listener.communicationOver:
+            await asyncio.sleep(0.5)
+
+        print("Communication is over")
+        delete_file("scan_signal.txt")
+        get_lcov()
+
+        delete_gcda_files()
+        kill9000()
 
 
 # -----------------------------------------------------------------------------
