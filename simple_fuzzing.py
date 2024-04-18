@@ -29,6 +29,8 @@ class CoAPFuzzer(AFL_Fuzzer):
                         self.fuzz_message_type,
                         self.fuzz_method]
         self.seedQ = []
+        self.analyzer = CoAPCoverageMiddleware()
+        self.coverage_hashes = set()
 
     def init_seedQ(self,seedQlen):
         for i in range(seedQlen):
@@ -83,6 +85,24 @@ class CoAPFuzzer(AFL_Fuzzer):
         header_bytes += token.encode('utf-8')
         return header_bytes
 
+    def isInteresting(self, seed_input):
+        try:
+            # Get coverage data
+            coverage_data = self.analyzer.analyze_coverage()
+            # Calculate hash of coverage data
+            coverage_hash = self.analyzer.hash_dict(coverage_data)
+            # Check if new coverage is picked up
+            if coverage_hash not in self.coverage_hashes:
+                # Further mutate the input and add to seedQ
+                mutated_input = self.mutate_t(seed_input, 0)
+                self.seedQ.append(mutated_input)
+
+                # Add coverage hash to set
+                self.coverage_hashes.add(coverage_hash)
+        except Exception as e:
+            print("Error updating seedQ with coverage:", e)
+            # Log the error if needed
+
 
     def fuzz_and_send_requests(self, num_requests, num_bytes, token_message_length):
         for _ in range(num_requests):
@@ -114,8 +134,7 @@ class CoAPFuzzer(AFL_Fuzzer):
                     print(response.pretty_print())
 
                     # Further mutate the input and add to seedQ
-                    mutated_input = self.mutate_t(seed_input, 0)
-                    self.seedQ.append(mutated_input)
+                    self.isInteresting(seed_input)
                     # Remove the first input from seedQ
                     self.seedQ.pop(0)
 
@@ -148,22 +167,29 @@ def main():
     logger = logging.getLogger(__name__)
 
     fuzzer = CoAPFuzzer(host, port)
-    analyzer=CoAPCoverageMiddleware()
     #while(1):
     seedQlength= 100
     fuzzer.init_seedQ(seedQlength)
 
     try:
-        for i in range (seedQlength):
-            print(i)
+        # fuzzer.analyzer.start_coverage()
+        number=0
+        #while fuzzer.seedQ:
+        for i in range(seedQlength):
+            print("Iteration:",number)
+            fuzzer.analyzer.start_coverage()
             fuzzer.fuzz_and_send_requests(num_requests=1, num_bytes=5,token_message_length=8)
+            # print("Coverage data for input", number, ":")
+            coverage_data = fuzzer.analyzer.stop_coverage()
+            number+=1
+            #print("Coverage data for input", i, ":", coverage_data)
     except Exception as e:
         logger.error("Fuzzing error: %s", e)
     finally:
         # Stop coverage measurement
-        analyzer.stop_coverage()
+        fuzzer.analyzer.stop_coverage()
         # Optionally, analyze coverage data for further processing with line count
-        coverage_data = analyzer.analyze_coverage()
+        coverage_data = fuzzer.analyzer.analyze_coverage()
         print("Coverage data:", coverage_data)
         # Close connection and stop coverage measurement
         fuzzer.close_connection()
