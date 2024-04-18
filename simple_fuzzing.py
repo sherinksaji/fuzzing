@@ -147,10 +147,6 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
 
-    # Start coverage measurement
-    cov = coverage.Coverage()
-    cov.start()
-
     fuzzer = CoAPFuzzer(host, port)
     analyzer=CoAPCoverageMiddleware()
     #while(1):
