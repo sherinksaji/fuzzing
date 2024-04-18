@@ -1,14 +1,17 @@
 from coapthon.client.helperclient import HelperClient
 import random
 import logging
-import coverage
-import os
 from Mutator import Mutator
 from AFL_base import AFL_Fuzzer
 from CoAPInput import CoAPInput
+from CoAPCoverageMiddleware import CoAPCoverageMiddleware
 import struct
+from coapthon.messages.request import Request
+from coapthon import defines
+import traceback
 
 class CoAPFuzzer(AFL_Fuzzer):
+    
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -149,6 +152,7 @@ def main():
     cov.start()
 
     fuzzer = CoAPFuzzer(host, port)
+    analyzer=CoAPCoverageMiddleware()
     #while(1):
     seedQlength= 100
     fuzzer.init_seedQ(seedQlength)
@@ -160,22 +164,13 @@ def main():
     except Exception as e:
         logger.error("Fuzzing error: %s", e)
     finally:
+        # Stop coverage measurement
+        analyzer.stop_coverage()
+        # Optionally, analyze coverage data for further processing with line count
+        coverage_data = analyzer.analyze_coverage()
+        print("Coverage data:", coverage_data)
         # Close connection and stop coverage measurement
         fuzzer.close_connection()
-        cov.stop()
-        cov.save()
-        cov.report()
-        #cov.report(show_missing=True)
-        #Get coverage data
-        cov_data = cov.get_data()
-
-        # Extract covered lines for each file
-        covered_lines_per_file = {}
-        for filename in cov_data.measured_files():
-            basename = os.path.basename(filename)
-            covered_lines_per_file[basename] = [lineno for lineno in cov_data.lines(filename) if lineno != 0]
-        #print(covered_lines_per_file)
-        logger.debug("Covered lines per file: %s", covered_lines_per_file)
 
 if __name__ == "__main__":
     main()
