@@ -34,7 +34,7 @@ class CoAPCoverageMiddleware:
 
 # Example usage:
 # if __name__ == "__main__":
-#     analyzer = CoverageAnalyzer()
+#     analyzer = CoAPCoverageMiddleware()
 #     analyzer.start_coverage()
 #     # Perform actions that you want to measure coverage for
 #     # For example, execute your CoAP functionality
