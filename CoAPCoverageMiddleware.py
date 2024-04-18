@@ -32,6 +32,11 @@ class CoAPCoverageMiddleware:
             coverage_count_dict[filename] = line_count
         return coverage_count_dict
 
+   def hash_dict(self, input_dict):
+        # Hash a dictionary using MD5 algorithm
+        hash_object = hashlib.md5(str(input_dict).encode())
+        return hash_object.hexdigest()
+
 # Example usage:
 # if __name__ == "__main__":
 #     analyzer = CoAPCoverageMiddleware()
