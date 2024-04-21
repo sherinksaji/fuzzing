@@ -42,7 +42,7 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") == -1:
             print(
                 color(
-                    f"BUG FOUND --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.  This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
                     "red",
                 )
             )
@@ -54,13 +54,13 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") == -1:
             print(
                 color(
-                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
             )
 
         elif split[0][0] == "C" and (
@@ -72,13 +72,13 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         ):
             print(
                 color(
-                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+                f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
             )
 
         return True
@@ -90,25 +90,25 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") != -1:
             print(
                 color(
-                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+                f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
             )
 
         elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") != -1:
             print(
                 color(
-                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
             )
 
         elif split[0][0] == "C" and (
@@ -120,13 +120,13 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         ):
             print(
                 color(
-                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+                f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
             )
 
     except asyncio.exceptions.TimeoutError:
@@ -134,13 +134,13 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         # Handle the GATT timeout error gracefully here
         zephyr_died()
         addToCrashAndBugReport(
-            f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. asyncio.exceptions.TimeoutError for 0x{attribute.handle:04X}\n"
+            f"BUG FOUND. asyncio.exceptions.TimeoutError for 0x{attribute.handle:04X}\n"
         )
 
     except TimeoutError:
         print(color("[X] Write Timeout", "red"))
         addToCrashAndBugReport(
-            f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. bumble.core.TimeoutError for 0x{attribute.handle:04X}. Zephyr may have crashed.\n"
+            f"BUG FOUND. bumble.core.TimeoutError for 0x{attribute.handle:04X}. Zephyr may have crashed.\n"
         )
         zephyr_died()
 
