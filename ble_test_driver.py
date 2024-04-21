@@ -19,37 +19,71 @@ from bumble.link import LocalLink
 from bumble.transport import open_transport_or_link
 from bumble.utils import AsyncRunner
 from bumble.colors import color
-#from bleFuzzer import BLE_Fuzzer
+#from ble_mutate import Mutator
 
 import random
 
-async def write_target(target, attribute, bytes):
+async def write_target(target, attribute, bytes, PermissionsAct):
     # Write
-    
+    str_attribute = str(attribute)
+    split = str_attribute.split(',')
+    handle = f"0x{attribute.handle:04X}"
     try:
         bytes_to_write = bytearray(bytes)
         await target.write_value(attribute, bytes_to_write, True)
-        print(attribute)
+        
         print(color(f'[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}', 'green'))
         
+        if split[0][0] == 'S' and PermissionsAct[handle][1].find('WRITE') == -1:
+            print(color(f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have WRITE permission", 'red'))
+        elif split[0][0] == 'D'and PermissionsAct[handle][1].find('WRITE') == -1:
+            print(color(f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission", 'red'))
+        elif split[0][0] == 'C' and (PermissionsAct[handle][1].find('|WRITE|') == -1 or (PermissionsAct[handle][1].find('|WRITE') == -1  and PermissionsAct[handle][1].find('|WRITE_|') != -1)):
+            print(color(f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission", 'red'))
         return True
     except ProtocolError as error:
         print(color(f'[!]  Cannot write attribute 0x{attribute.handle:04X}:', 'yellow'), error)
+
+        if split[0][0] == 'S' and PermissionsAct[handle][1].find('WRITE') != -1:
+            print(color(f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to", 'red'))
+        elif split[0][0] == 'D'and PermissionsAct[handle][1].find('WRITE') != -1:
+            print(color(f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to", 'red'))
+        elif split[0][0] == 'C' and (PermissionsAct[handle][1].find('|WRITE|') != -1 or (PermissionsAct[handle][1].find('|WRITE') != -1  and PermissionsAct[handle][1].find('|WRITE_|') == -1)):
+            print(color(f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to", 'red'))
     except TimeoutError:
         print(color('[X] Write Timeout', 'red'))
         
     return False
 
 
-async def read_target(target, attribute):
+async def read_target(target, attribute, PermissionsAct):
     # Read
+    str_attribute = str(attribute)
+    split = str_attribute.split(',')
+    handle = f"0x{attribute.handle:04X}"
     try: 
         read = await target.read_value(attribute)
         value = read.decode('latin-1')
         print(color(f'[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}', 'cyan'))
+
+        if split[0][0] == 'S' and PermissionsAct[handle][1].find('READ') == -1:
+            print(color(f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission",'red'))
+        elif split[0][0] == 'D'and PermissionsAct[handle][1].find('READ') == -1:
+            print(color(f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission",'red'))
+        elif split[0][0] == 'C' and PermissionsAct [handle][1].find('READ') == -1:
+            print(color(f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} does not have READ permission",'red'))
+
         return value
     except ProtocolError as error:
         print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
+
+        if split[0][0] == 'S' and PermissionsAct[handle][1].find('READ') != -1:
+            print(color(f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ",'red'))
+        elif split[0][0] == 'D'and PermissionsAct[handle][1].find('READ') != -1:
+            print(color(f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ",'red'))
+        elif split[0][0] == 'C' and PermissionsAct[handle][1].find('READ') != -1:
+            print(color(f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ",'red'))
+                 
     except TimeoutError:
         print(color('[!] Read Timeout'))
     
@@ -83,7 +117,6 @@ class TargetEventsListener(Device.Listener):
         target = Peer(connection)
         attributes = []
 
-        PermissionsRun = {}
         PermissionsAct = {}
         
         await target.discover_services()
@@ -111,9 +144,10 @@ class TargetEventsListener(Device.Listener):
                 PermissionsAct[split[0][18:]] = ['Descriptor', 'READ']
             elif split[0][0] == 'C':
                 PermissionsAct[split[0][22:]] = ['Characteristic', split[-1][1:-1]]            
-            await write_target(target, attribute, [0x0FF])
-            await read_target(target, attribute)
-        print(PermissionsAct)
+            await write_target(target, attribute, [0x01], PermissionsAct)
+            
+            await read_target(target, attribute, PermissionsAct)
+        #print(PermissionsAct)
 
         #current_time = int(time.time())
         #random.seed(current_time)
@@ -138,13 +172,11 @@ class TargetEventsListener(Device.Listener):
                     file_path = line.split(':', 1)[1]
                 elif line.startswith('DA:'):
                     parts = line.split(',')
-                    print(parts)
                     line_number = parts[0]
                     hit_count = int(parts[1])
                     file_hash = calculate_hash(file_path, line_number)
                     hit_counts[file_hash] = hit_count
 
-        print(hit_counts)
         # ---------------------------------------------------
         
         
