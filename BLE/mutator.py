@@ -272,10 +272,12 @@ class Mutator:
             flip_random_bit,
             havoc,
             extend_with_random_bytes,
+            empty
         ]
 
         # Select a random mutator and apply it
-        mutator = random.choice(mutators)
+        probabilities = [0.111, 0.111, 0.111, 0.113, 0.113, 0.113, 0.111, 0.113, 0.104]
+        mutator = random.choices(mutators, probabilities, k=1)[0]
         # probability = random.random()
         # if probability < 0.1:
         #     return empty()
