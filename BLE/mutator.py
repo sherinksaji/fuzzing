@@ -276,7 +276,7 @@ class Mutator:
         ]
 
         # Select a random mutator and apply it
-        probabilities = [0.111, 0.111, 0.111, 0.113, 0.113, 0.113, 0.111, 0.113, 0.104]
+        probabilities = [0.110, 0.110, 0.110, 0.113, 0.113, 0.113, 0.111, 0.113, 0.107]
         mutator = random.choices(mutators, probabilities, k=1)[0]
         #print(mutator)
         # probability = random.random()
