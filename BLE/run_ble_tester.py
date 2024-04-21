@@ -64,6 +64,7 @@ async def write_target(target, attribute, bytes):
     except TimeoutError:
         print(color("[X] Write Timeout", "red"))
         zephyr_died()
+    return False
 
 
 async def read_target(target, attribute):

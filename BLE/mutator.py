@@ -218,10 +218,18 @@ class Mutator:
             byte_list.insert(index, random.randint(0, 255))
             return byte_list
 
-        def remove_random_byte(byte_list):
+        def remove_random_bytes(byte_list):
             if byte_list:
-                index = random.randint(0, len(byte_list) - 1)
-                del byte_list[index]
+                # Determine how many bytes to remove, at least 1, up to the length of the list
+                num_to_remove = random.randint(1, len(byte_list))
+
+                for _ in range(num_to_remove):
+                    if (
+                        byte_list
+                    ):  # Check if list is not empty before attempting to remove
+                        index = random.randint(0, len(byte_list) - 1)
+                        del byte_list[index]
+
             return byte_list
 
         def flip_random_bit(byte_list):
@@ -238,16 +246,29 @@ class Mutator:
             byte_list.insert(0, 0xFF)
             return byte_list
 
+        def insert1(byte_list):
+            byte_list.insert(0, 1)
+            return byte_list
+
+        def insert0(byte_list):
+            byte_list.insert(0, 0)
+            return byte_list
+
         def extend_with_random_bytes(byte_list):
             num_bytes = random.randint(1, 10)
             byte_list.extend(random.randint(0, 255) for _ in range(num_bytes))
             return byte_list
 
+        def empty():
+            return []
+
         # List of mutators
         mutators = [
+            insert1,
+            insert0,
             replace_random_byte,
             add_random_byte,
-            remove_random_byte,
+            remove_random_bytes,
             flip_random_bit,
             havoc,
             extend_with_random_bytes,
@@ -255,14 +276,17 @@ class Mutator:
 
         # Select a random mutator and apply it
         mutator = random.choice(mutators)
+        # probability = random.random()
+        # if probability < 0.1:
+        #     return empty()
         return mutator(byte_list)
 
 
-# mutator = Mutator()
-# byte_list = [0x01, 0x02]
-# print(byte_list)
-# mutated = mutator.mutate_byte_list(byte_list)
-# print(mutated)
+mutator = Mutator()
+byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+print(byte_list)
+mutated = mutator.mutate_byte_list(byte_list)
+print(mutated)
 
 # byte_string = bytes([65, 66, 67, 68, 69])
 # print(byte_string)

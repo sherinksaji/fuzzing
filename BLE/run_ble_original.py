@@ -6,23 +6,30 @@ import logging
 import asyncio
 import sys
 import os
+import glob
 import time
 import signal
+import json
 from binascii import hexlify
 import psutil
 from bumble.device import Device, Peer
 from bumble.host import Host
 from bumble.gatt import show_services
-from bumble.core import ProtocolError
+from bumble.core import ProtocolError, TimeoutError
 from bumble.controller import Controller
 from bumble.link import LocalLink
 from bumble.transport import open_transport_or_link
 from bumble.utils import AsyncRunner
 from bumble.colors import color
 
+result_dict = {}
 
-async def write_target(target, attribute, bytes):
+
+async def write_target(target, attribute, bytes, PermissionsAct):
     # Write
+    str_attribute = str(attribute)
+    split = str_attribute.split(",")
+    handle = f"0x{attribute.handle:04X}"
     try:
         bytes_to_write = bytearray(bytes)
         await target.write_value(attribute, bytes_to_write, True)
@@ -32,20 +39,125 @@ async def write_target(target, attribute, bytes):
                 "green",
             )
         )
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") == -1:
+            print(
+                color(
+                    f"BUG FOUND --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.  This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+            )
+
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") == -1:
+            print(
+                color(
+                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+            )
+
+        elif split[0][0] == "C" and (
+            PermissionsAct[handle][1].find("|WRITE|") == -1
+            or (
+                PermissionsAct[handle][1].find("|WRITE") == -1
+                and PermissionsAct[handle][1].find("|WRITE_|") != -1
+            )
+        ):
+            print(
+                color(
+                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+            )
+
         return True
     except ProtocolError as error:
         print(
             color(f"[!]  Cannot write attribute 0x{attribute.handle:04X}:", "yellow"),
             error,
         )
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") != -1:
+            print(
+                color(
+                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+            )
+
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") != -1:
+            print(
+                color(
+                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+            )
+
+        elif split[0][0] == "C" and (
+            PermissionsAct[handle][1].find("|WRITE|") != -1
+            or (
+                PermissionsAct[handle][1].find("|WRITE") != -1
+                and PermissionsAct[handle][1].find("|WRITE_|") == -1
+            )
+        ):
+            print(
+                color(
+                    f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+            )
+
+    except asyncio.exceptions.TimeoutError:
+        print(color("[X] Write Timeout", "red"))
+        # Handle the GATT timeout error gracefully here
+        zephyr_died()
+        addToCrashAndBugReport(
+            f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. asyncio.exceptions.TimeoutError for 0x{attribute.handle:04X}\n"
+        )
+
     except TimeoutError:
         print(color("[X] Write Timeout", "red"))
+        addToCrashAndBugReport(
+            f"BUG FOUND--> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. bumble.core.TimeoutError for 0x{attribute.handle:04X}. Zephyr may have crashed.\n"
+        )
+        zephyr_died()
 
     return False
 
 
-async def read_target(target, attribute):
+def addToCrashAndBugReport(stmt):
+    f = open("bugAndCrashReport.txt", "a")
+    f.write(stmt)
+    f.close()
+
+
+async def read_target(target, attribute, PermissionsAct):
     # Read
+    str_attribute = str(attribute)
+    split = str_attribute.split(",")
+    handle = f"0x{attribute.handle:04X}"
     try:
         read = await target.read_value(attribute)
         value = read.decode("latin-1")
@@ -55,22 +167,100 @@ async def read_target(target, attribute):
                 "cyan",
             )
         )
+
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") == -1:
+            print(
+                color(
+                    f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission\n"
+            )
+
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") == -1:
+            print(
+                color(
+                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission\n"
+            )
+
+        elif split[0][0] == "C" and PermissionsAct[handle][1].find("READ") == -1:
+            print(
+                color(
+                    f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} does not have READ permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} does not have READ permission\n"
+            )
+
         return value
     except ProtocolError as error:
         print(
             color(f"[!]  Cannot read attribute 0x{attribute.handle:04X}:", "yellow"),
             error,
         )
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") != -1:
+            print(
+                color(
+                    f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
+            )
+
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") != -1:
+            print(
+                color(
+                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
+            )
+
+        elif split[0][0] == "C" and PermissionsAct[handle][1].find("READ") != -1:
+            print(
+                color(
+                    f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
+            )
+
     except TimeoutError:
         print(color("[!] Read Timeout"))
+        addToCrashAndBugReport(
+            f"bumble.core.TimeoutError for 0x{attribute.handle:04X}. Zephyr may have crashed.\n"
+        )
+        zephyr_died()
 
     return None
 
 
 # -----------------------------------------------------------------------------
 class TargetEventsListener(Device.Listener):
-    def __init__(self):
+    def __init__(self, t_prime):
         super().__init__()
+        self.t_prime = t_prime
         self.communicationOver = False
 
     got_advertisement = False
@@ -98,6 +288,7 @@ class TargetEventsListener(Device.Listener):
         print("=== Discovering services")
         target = Peer(connection)
         attributes = []
+        PermissionsAct = {}
         await target.discover_services()
         for service in target.services:
             attributes.append(service)
@@ -115,8 +306,20 @@ class TargetEventsListener(Device.Listener):
         print("=== No Read/Write Attributes (Handles)")
 
         for attribute in attributes:
-            await write_target(target, attribute, [0x01])
-            await read_target(target, attribute)
+            str_attribute = str(attribute)
+            split = str_attribute.split(",")
+            if split[0][0] == "S":
+                PermissionsAct[split[0][15:]] = ["Service", "READ"]
+            elif split[0][0] == "D":
+                PermissionsAct[split[0][18:]] = ["Descriptor", "READ"]
+            elif split[0][0] == "C":
+                PermissionsAct[split[0][22:]] = ["Characteristic", split[-1][1:-1]]
+            await write_target(target, attribute, self.t_prime, PermissionsAct)
+            if zephyr_died == True:
+                break
+            await read_target(target, attribute, PermissionsAct)
+            if zephyr_died == True:
+                break
 
         print("---------------------------------------------------------------")
         print(color("[OK] Communication Finished", "green"))
@@ -136,16 +339,43 @@ def find_pid(process_name):
     return None
 
 
-def zephyr_died():
-    zephyr_pid = find_pid("zephyr.exe")
+# def zephyr_died():
+#     zephyr_pid = find_pid("zephyr.exe")
 
-    # Kill the process with the obtained pid
-    if zephyr_pid:
-        print("Zephyr still alive")
-        return False
-    else:
-        print("Zephyr died")
-        return True
+#     # Kill the process with the obtained pid
+#     if zephyr_pid:
+#         print("Zephyr still alive")
+#         return False
+#     else:
+#         print("Zephyr died")
+#         return True
+
+
+def zephyr_died():
+    """
+    Check if the specific zephyr process with the given command line arguments has died.
+
+    Returns:
+    bool: True if the process is not found (i.e., it has died), False otherwise (still running).
+    """
+    target_process_name = "zephyr.exe"
+    target_arguments = ["--bt-dev=127.0.0.1:9000"]
+
+    # Iterate over all processes to find a matching process
+    for process in psutil.process_iter(["name", "cmdline"]):
+        try:
+            # Extract the process name and command line arguments
+            if process.info["name"] == target_process_name:
+                # Check if all target arguments are present in the process's command line
+                if all(arg in process.info["cmdline"] for arg in target_arguments):
+                    print("Zephyr still alive")
+                    return False  # Process is found and thus alive
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            # Process has terminated or we do not have permission to access its info
+            continue
+
+    print("Zephyr died")
+    return True
 
 
 def wait_for_process_to_die(pid, timeout=10):
@@ -165,14 +395,46 @@ def wait_for_process_to_die(pid, timeout=10):
         print(f"An error occurred: {str(e)}")
 
 
-def get_lcov():
+def kill_zephyr():
     zephyr_pid = find_pid("zephyr.exe")
     if zephyr_pid:
         print("Attempting to terminate zephyr.exe")
         wait_for_process_to_die(zephyr_pid)
 
+
+def kill_all_zephyr_processes():
+    print("Killing zephyr")
+    process_killed = False
+    for process in psutil.process_iter(["name", "pid"]):
+        if process.info["name"] == "zephyr.exe":
+            pid = process.info["pid"]
+            try:
+                proc = psutil.Process(pid)
+                proc.terminate()
+                proc.wait(timeout=5)
+                logging.info(f"Successfully terminated 'zephyr.exe' with PID {pid}.")
+                process_killed = True
+            except psutil.NoSuchProcess:
+                logging.warning(f"No such process with PID {pid}.")
+            except psutil.TimeoutExpired:
+                logging.error(
+                    f"Timeout expired: 'zephyr.exe' with PID {pid} did not terminate, attempting SIGKILL."
+                )
+                proc.kill()
+            except Exception as e:
+                logging.error(f"Error killing 'zephyr.exe' with PID {pid}: {str(e)}")
+    if not process_killed:
+        result_dict["crash"] = True
+        logging.info("No 'zephyr.exe' processes were found to kill.")
+    else:
+        result_dict["crash"] = False
+
+
+def get_lcov():
+
     # Capture and summarize code coverage using lcov after confirming the process is dead
     fileName = "lcov_" + str(time.time_ns()) + ".info"
+    result_dict["lcovFilename"] = fileName
     fullDir = os.path.join("lcov_coverage", fileName)
     lcov_capture_command = f"lcov --capture --directory ./ --output-file {fullDir} -q --rc lcov_branch_coverage=1"
     os.system(lcov_capture_command)
@@ -188,6 +450,24 @@ def delete_file(file_path):
         print(f"Deleted file: {file_path}")
     except OSError as e:
         print(f"Error deleting file {file_path}: {e}")
+
+
+def find_gcda_files():
+    """Search for .gcda files within the specified directory and its subdirectories."""
+    # This constructs a path pattern to search for .gcda files.
+    directory = "~/STV-Project/BLE"
+    path_pattern = os.path.join(directory, "**", "*.gcda")
+
+    # The glob.glob function with recursive=True allows searching this pattern in all subdirectories.
+    gcda_files = glob.glob(path_pattern, recursive=True)
+
+    # Check if we found any files and print the result.
+    if gcda_files:
+        print(f"Found .gcda files:")
+        for file in gcda_files:
+            print(file)
+    else:
+        print("No .gcda files found.")
 
 
 def delete_gcda_files():
@@ -227,6 +507,46 @@ def kill9000():
         print(f"No process found using port {port_number}.")
 
 
+def read_t_prime():
+    with open("t_prime.txt", "r") as file:
+        hex_string = file.read().strip()  # Strip any leading/trailing whitespace
+    byte_values = [int(hex_string[i : i + 2], 16) for i in range(0, len(hex_string), 2)]
+    return byte_values
+
+
+def write_result(t_prime, bug=False):
+    filename = "result.json"
+    delete_file(filename)
+    print("Writing to result.json...")
+    with open(filename, "w") as file:
+        json.dump(result_dict, file, indent=4)
+
+
+def is_process_alive(process_name, arguments):
+    """
+    Check if there is any running process that matches the process_name and includes all specified arguments.
+
+    Args:
+    - process_name (str): The name of the process to check for.
+    - arguments (list of str): A list of arguments that must all be present in the process's command line.
+
+    Returns:
+    - bool: True if such a process is found, False otherwise.
+    """
+    # Iterate over all processes
+    for process in psutil.process_iter(["name", "cmdline"]):
+        try:
+            # Check if process name matches and all specified arguments are in the command line
+            if process.info["name"] == process_name and all(
+                arg in process.info["cmdline"] for arg in arguments
+            ):
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            # Process has been terminated or we don't have permission to access its info
+            continue
+    return False
+
+
 # -----------------------------------------------------------------------------
 async def main():
 
@@ -234,6 +554,8 @@ async def main():
     tcp_server = "tcp-server:127.0.0.1:9000"
     async with await open_transport_or_link(tcp_server) as (hci_source, hci_sink):
         print(">>> Connected")
+        delete_gcda_files()
+        find_gcda_files()
 
         # Create a local communication channel between multiple controllers
         link = LocalLink()
@@ -250,7 +572,9 @@ async def main():
         # Create a second controller for connection with this test driver (Bumble)
         device.host.controller = Controller("Fuzzer", link=link)
         # Connect class to receive events during communication with target
-        device.listener = TargetEventsListener()
+        t_prime = read_t_prime()
+        print("t_prime : ", t_prime)
+        device.listener = TargetEventsListener(t_prime)
 
         # Start BLE scanning here
         await device.power_on()
@@ -277,10 +601,15 @@ async def main():
             await asyncio.sleep(0.5)
 
         print("Communication is over")
-        delete_file("scan_signal.txt")
-        get_lcov()
 
-        delete_gcda_files()
+        delete_file("scan_signal.txt")
+
+        kill_all_zephyr_processes()
+
+        get_lcov()
+        write_result(t_prime)
+        # want to wait for30s before closing
+        await asyncio.sleep(10)
         kill9000()
 
 
