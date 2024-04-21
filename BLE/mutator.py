@@ -259,7 +259,7 @@ class Mutator:
             byte_list.extend(random.randint(0, 255) for _ in range(num_bytes))
             return byte_list
 
-        def empty():
+        def empty(byte_list):
             return []
 
         # List of mutators
@@ -278,17 +278,19 @@ class Mutator:
         # Select a random mutator and apply it
         probabilities = [0.111, 0.111, 0.111, 0.113, 0.113, 0.113, 0.111, 0.113, 0.104]
         mutator = random.choices(mutators, probabilities, k=1)[0]
+        #print(mutator)
         # probability = random.random()
         # if probability < 0.1:
         #     return empty()
         return mutator(byte_list)
 
+# Test
+# mutator = Mutator()
+# byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+# print(byte_list)
+# mutated = mutator.mutate_byte_list(byte_list)
+# print(mutated)
 
-mutator = Mutator()
-byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-print(byte_list)
-mutated = mutator.mutate_byte_list(byte_list)
-print(mutated)
 
 # byte_string = bytes([65, 66, 67, 68, 69])
 # print(byte_string)
