@@ -1,0 +1,29 @@
+BUG FOUND. WRITE Handle 0x0004 --> Bytes=02, Val=0001.This descriptor of handle 0x0004 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0013 --> Bytes=02, Val=0001.This descriptor of handle 0x0013 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0018 --> Bytes=02, Val=0001.This descriptor of handle 0x0018 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0023 --> Bytes=02, Val=0001.This descriptor of handle 0x0023 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0004 --> Bytes=01, Val=01.This descriptor of handle 0x0004 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0006 --> Bytes=01, Val=01.This characteristic of handle 0x0006 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0013 --> Bytes=01, Val=01.This descriptor of handle 0x0013 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0018 --> Bytes=01, Val=01.This descriptor of handle 0x0018 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0023 --> Bytes=01, Val=01.This descriptor of handle 0x0023 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x002A --> Bytes=01, Val=01.This characteristic of handle 0x002A does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0004 --> Bytes=01, Val=6b.This descriptor of handle 0x0004 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0006 --> Bytes=01, Val=6b.This characteristic of handle 0x0006 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0013 --> Bytes=01, Val=6b.This descriptor of handle 0x0013 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0018 --> Bytes=01, Val=6b.This descriptor of handle 0x0018 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0023 --> Bytes=01, Val=6b.This descriptor of handle 0x0023 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0004 --> Bytes=02, Val=006b.This descriptor of handle 0x0004 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0013 --> Bytes=02, Val=006b.This descriptor of handle 0x0013 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0018 --> Bytes=02, Val=006b.This descriptor of handle 0x0018 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0023 --> Bytes=02, Val=006b.This descriptor of handle 0x0023 does not have WRITE permission
+BUG FOUND. WRITE Handle 0x0006 --> Bytes=00, Val=.This characteristic of handle 0x0006 does not have WRITE permission
+BUG FOUND. bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+BUG FOUND. bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.
+BUG FOUND. WRITE Handle 0x0006 --> Bytes=00, Val=.This characteristic of handle 0x0006 does not have WRITE permission
+BUG FOUND. bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+BUG FOUND. bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.

@@ -41,7 +41,7 @@ class AFL_Fuzzer(ABC):
     def AssignEnergy(self, t):
         for i in self.pathCoverage:
             if isinstance(i[1], list) and t in i[1]:
-                return 512 * (1 - (i[2] / self.pathCoverage[0][1]))
+                return 20 * self.numberOfTimes * (1 - (i[2] / self.pathCoverage[0][1]))
         return 512
 
     @abstractmethod
@@ -95,7 +95,7 @@ class AFL_Fuzzer(ABC):
             self.interestingPaths.append(path)
             print("t is interesting")
             return True
-
+        print("t is not interesting")
         return False
 
     async def fuzz(self):
@@ -108,6 +108,7 @@ class AFL_Fuzzer(ABC):
                     await self.runTestRevealsCrashOrBug(t_prime)
                 )
                 if crashOrBug:
+                    print("adding t to failureQ")
                     self.failureQ.append(t_prime)
                     for i, tup in enumerate(self.pathCoverage):
                         if t_prime_coverage_data == tup[1]:
@@ -118,6 +119,7 @@ class AFL_Fuzzer(ABC):
                         if i == len(self.pathCoverage) - 1 and changed != True:
                             self.pathCoverage.append((t_prime_coverage_data, 1))
                 elif self.isInteresting(t_prime_coverage_data) == True:
+                    print("adding t to seedQ")
                     self.seedQ.append((t_prime, t_prime_coverage_data, covered_lines))
                     for i, tup in enumerate(self.pathCoverage):
                         if t_prime_coverage_data == tup[1]:
@@ -127,6 +129,7 @@ class AFL_Fuzzer(ABC):
                             changed = True
                         if i == len(self.pathCoverage) - 1 and changed != True:
                             self.pathCoverage.append((t_prime_coverage_data, 1))
+            self.numberOfTimes += 1
 
 
 def printDict(dictName, dict):

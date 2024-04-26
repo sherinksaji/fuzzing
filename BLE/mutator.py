@@ -19,6 +19,9 @@ MAGIC_VALS = [
 
 
 class Mutator:
+    def __init__(self):
+        self.prev_output = None
+
     def __init__(self) -> None:
         pass
 
@@ -272,17 +275,18 @@ class Mutator:
             flip_random_bit,
             havoc,
             extend_with_random_bytes,
-            empty
+            empty,
         ]
 
         # Select a random mutator and apply it
         probabilities = [0.110, 0.110, 0.110, 0.113, 0.113, 0.113, 0.111, 0.113, 0.107]
         mutator = random.choices(mutators, probabilities, k=1)[0]
-        #print(mutator)
+        # print(mutator)
         # probability = random.random()
         # if probability < 0.1:
         #     return empty()
         return mutator(byte_list)
+
 
 # Test
 # mutator = Mutator()
