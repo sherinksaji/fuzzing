@@ -1,282 +1,238 @@
 import random
-
-FLIP_RATIO = 0.1  # 1% ratio of bit flips
-FLIP_ARRAY = [1, 2, 4, 8, 16, 32, 64, 128]
-
-MAGIC_VALS = [
-    [0xFF],
-    [0x7F],
-    [0x00],
-    [0xFF, 0xFF],  # 0xFFFF
-    [0x00, 0x00],  # 0x0000
-    [0xFF, 0xFF, 0xFF, 0xFF],  # 0xFFFFFFFF
-    [0x00, 0x00, 0x00, 0x00],  # 0x80000000
-    [0x00, 0x00, 0x00, 0x80],  # 0x80000000
-    [0x00, 0x00, 0x00, 0x40],  # 0x40000000
-    [0xFF, 0xFF, 0xFF, 0x7F],  # 0x7FFFFFFF
-]
-
+import time
+import copy
+import string
 
 class Mutator:
+    def __init__(self):
+        self.prev_output = None
+
     def __init__(self) -> None:
         pass
 
-    def bit_flip(self, byte):
-        return byte ^ random.choice(FLIP_ARRAY)
+    def mutate_number(self, original_number):
 
-    def magic(self, data, idx):
-        picked_magic = random.choice(MAGIC_VALS)
+        def add_subtract_random_value(n):
+            delta = random.randint(1, 10)
+            return n + random.choice([-delta, delta])
 
-        offset = 0
-        for m in picked_magic:
-            data[idx + offset] = m
-            offset += 1
+        def multiply_divide_random_factor(n):
 
-    def mutate_str(self, input_str):
-        data = list(input_str.encode("utf-16"))
-        # for byte in data:
-        #     print(byte, end=' ')
-        # print("\n")
+            factor = random.choice([0.5, 2])
+            operation = random.choice([lambda x: x * factor, lambda x: x / factor])
+            return int(operation(n))
 
-        flips = int(len(data) * FLIP_RATIO)
-        flip_indexes = random.choices(range(0, len(data) - 6), k=flips)
-        # print(flips, flip_indexes)
+        def flip_random_bit(n):
 
-        methods = [0, 1]
+            bit = 1 << random.randint(0, 31)
+            return n ^ bit
 
-        for idx in flip_indexes:
-            method = random.choice(methods)
+        def generate_large_number(n):
+            print("generate_large_number")
+            return (2**32) - 1
 
-            if method == 0:
-                data[idx] = self.bit_flip(data[idx])
-            else:
-                self.magic(data, idx)
+        def generate_small_number(n):
+            print("generate_small_number")
+            return -((2**32) - 1)
+        
+        mutators = [
+            add_subtract_random_value,
+            multiply_divide_random_factor,
+            flip_random_bit,
+            generate_large_number,
+            generate_small_number
+        ]
 
-        # for byte in data:
-        #     print(byte, end=' ')
-        # print("\n")
+        mutator = mutators[random.randint(0, len(mutators) - 1)]
 
-        # print(bytearray(data).decode("utf-16"), "\n\n")
+        return mutator(original_number)
 
-        return bytearray(data).decode("utf-16")
+    def mutate_str(self, original_str=''):
+        char_digits = string.digits              #'0123456789'
+        char_uppercase = string.ascii_uppercase  #'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        char_lowercase = string.ascii_lowercase  #'abcdefghijklmnopqrstuvwxyz'
+        char_punc = string.punctuation        #'!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
+        all_chars = char_digits + char_uppercase + char_lowercase + char_punc
+        def delete_random_character(s):
+            """Returns s with a random character deleted"""
+            print('delete')
+            if s == "":
+                return s
 
-    def decide_reduction_ratio(self, input_obj):
-        """
-        Decide the reduction ratio based on the length of the input string,
-        ensuring a minimum meaningful reduction for very short strings.
+            pos = random.randint(0, len(s) - 1)
+            return s[:pos] + s[pos + 1:]
 
-        Args:
-            input_str (str): The input string to determine the reduction ratio for.
-
-        Returns:
-            float: The reduction ratio to use, or a special value indicating a minimum reduction for very short strings.
-        """
-        length = len(input_obj)
-
-        if length <= 1:
-            # For a single character or empty string, no reduction is possible
-            return 0
-        elif length <= 4:
-            # For very short strings, reduction by a fixed minimum (e.g., removing one character) might be more appropriate
-            return 1 / length  # Ensures at least one character is removed
-        elif 4 < length < 10:
-            # Short strings can have a smaller reduction ratio
-            return 0.2
-        elif 10 <= length < 50:
-            # Moderate length strings can have a moderate reduction ratio
-            return 0.3
-        elif 50 <= length < 100:
-            # Longer strings can afford a larger reduction ratio
-            return 0.4
-        else:
-            # Very long strings can have the largest reduction ratio
-            return 0.5
-
-    def decide_addition_ratio(self, input_obj):
-        """
-        Decide the addition ratio based on the length of the input string,
-        aiming to balance the additions so as not to overwhelm short strings
-        and to proportionally extend longer strings.
-
-        Args:
-            input_str (str): The input string to determine the addition ratio for.
-
-        Returns:
-            float: The addition ratio to use, carefully calibrated based on string length.
-        """
-        length = len(input_obj)
-
-        if length <= 1:
-            # For a single character or empty string, being conservative with additions
-            return 1  # Doubling or adding one more character might be meaningful
-        elif length <= 4:
-            # For very short strings, being slightly aggressive to make a noticeable difference
-            return 0.75  # Add up to 75% more characters
-        elif 4 < length < 10:
-            # Short strings can handle a moderate addition ratio
-            return 0.5  # Add up to 50% more characters
-        elif 10 <= length < 50:
-            # As strings get longer, a smaller addition ratio can still result in significant growth
-            return 0.3
-        elif 50 <= length < 100:
-            # For longer strings, further minimize the addition ratio to maintain coherence
-            return 0.2
-        else:
-            # Very long strings should have the smallest addition ratio
-            return 0.1  # Add up to 10% more characters to maintain readability and coherence
-
-    def shorten_str(self, input_str, reduction_ratio="auto decide"):
-        if reduction_ratio == "auto decide":
-            reduction_ratio = self.decide_reduction_ratio(input_str)
-        if reduction_ratio < 0 or reduction_ratio > 1:
-            raise ValueError("Reduction ratio must be between 0 and 1")
-
-        length_to_remove = int(len(input_str) * reduction_ratio)
-        for _ in range(length_to_remove):
-            if len(input_str) > 0:
-                # Randomly remove a character
-                remove_index = random.randint(0, len(input_str) - 1)
-                input_str = input_str[:remove_index] + input_str[remove_index + 1 :]
-        return input_str
-
-    def lengthen_str(self, input_str, addition_ratio="auto decide"):
-        if addition_ratio == "auto decide":
-            addition_ratio = self.decide_addition_ratio(input_str)
-
-        length_to_add = int(len(input_str) * addition_ratio)
-
-        for _ in range(length_to_add):
-            # Randomly duplicate a character
-            if len(input_str) > 0:
-                add_index = random.randint(0, len(input_str) - 1)
-                input_str = (
-                    input_str[:add_index] + input_str[add_index] + input_str[add_index:]
-                )
-        return input_str
-
-    # print(lengthen_str("abcdefg"))
-
-    def mutate_bytestring(
-        self, byte_string, mutation_type="invert", mutation_ratio="auto decide"
-    ):
-        """Mutate a byte string by inverting a ratio of its bytes, specified by mutation_ratio."""
-        if mutation_ratio == "auto decide":
-            mutation_ratio = self.decide_reduction_ratio(byte_string)
-        if not byte_string:
-            # Handle empty byte string case
-            return byte_string
-
-        byte_array = bytearray(byte_string)  # Convert to bytearray for ease of mutation
-        n = len(byte_array)
-        n_mutate = max(
-            1, int(n * mutation_ratio)
-        )  # Ensure at least one byte is mutated
-
-        if mutation_type == "invert":
-            # Randomly select bytes to mutate based on the specified ratio
-            indexes_to_mutate = random.sample(range(n), n_mutate)
-            for i in indexes_to_mutate:
-                byte_array[i] = ~byte_array[i] & 0xFF  # Invert the byte
-            return bytes(byte_array)  # Convert back to bytes
-        elif mutation_type == "shuffle":
-
-            byte_list = list(byte_string)
-            random.shuffle(byte_list)
-            return bytes(byte_list)
-        else:
-            raise ValueError("Unsupported mutation type")
-
-    def shorten_bytestring(self, byte_string, reduction_ratio=0.1):
-        """Reduce the length of a byte string by a percentage."""
-        if reduction_ratio == "auto decide":
-            reduction_ratio = self.decide_reduction_ratio(byte_string)
-        new_length = int(len(byte_string) * (1 - reduction_ratio))
-        return byte_string[:new_length]
-
-    def lengthen_bytestring(self, byte_string, addition_ratio="auto decide"):
-        """Attempt to increase the length of a byte string by duplicating random parts of it."""
-        if addition_ratio == "auto decide":
-            addition_ratio = self.decide_addition_ratio(byte_string)
-
-        if not isinstance(byte_string, bytes):
-            raise ValueError("Input must be a byte string")
-
-        length_to_add = int(len(byte_string) * (addition_ratio))
-
-        additions = [random.choice(byte_string) for _ in range(length_to_add)]
-        # For simplicity, appending at the end. Could be made more complex by inserting at random positions
-        return byte_string + bytes(additions)
-
-    def mutate_number(self, number):
-        if isinstance(number, int):
-            return number ^ random.choice(FLIP_ARRAY)
-        elif isinstance(number, float):
-            return number + random.uniform(-1, 1)
-        else:
-            raise TypeError("Unsupported number type")
-
-    def mutate_bytearray(self, byte_array, mutation_ratio=0.1):
-        """Mutate a bytearray by inverting a ratio of its bytes."""
-        n = len(byte_array)
-        n_mutate = max(
-            1, int(n * mutation_ratio)
-        )  # Ensure at least one byte is mutated
-
-        indexes_to_mutate = random.sample(range(n), n_mutate)
-        for i in indexes_to_mutate:
-            byte_array[i] = ~byte_array[i] & 0xFF  # Invert the byte
-        return byte_array
-
-    def shorten_bytearray(self, byte_array, reduction_ratio="auto decide"):
-        """Reduce the length of a bytearray by a percentage."""
-        if reduction_ratio == "auto decide":
-            reduction_ratio = self.decide_reduction_ratio(byte_array)
-        new_length = int(len(byte_array) * (1 - reduction_ratio))
-        del byte_array[new_length:]  # Delete bytes from new_length to the end
-        return byte_array
-
-    def lengthen_bytearray(self, byte_array, addition_ratio="auto decide"):
-        """Increase the length of a bytearray by duplicating random parts of it."""
-        if addition_ratio == "auto decide":
-            addition_ratio = self.decide_addition_ratio(byte_array)
-        length_to_add = int(len(byte_array) * addition_ratio)
-        additions = [random.choice(byte_array) for _ in range(length_to_add)]
-        byte_array.extend(additions)
-        return byte_array
+        def insert_random_character(s):
+            """Returns s with a random character inserted"""
+            print('insert', s)
+            pos = random.randint(0, len(s))
+            random_character = random.sample(all_chars, 1)[0]
+            print(random_character, s[:pos], s[pos:])
+            return s[:pos] + random_character + s[pos:]
 
 
-mutator = Mutator()
+        def flip_random_character(s):
+            """Returns s with a random bit flipped in a random position"""
+            print('flip')
+            if s == "":
+                return s
 
-shortened_str = mutator.shorten_str("abc")
-# print(shortened_str)
+            try:
 
-lengthened_str = mutator.lengthen_str("byebye123")
-# print(lengthened_str)
+                byte_array = bytearray(original_str, 'utf-8')
+
+                # Generate a random bit index from 0 to 7
+                bit_index = random.randint(0, 7)
+
+                char_index = random.randint(0, len(s)-1)
+
+                # Flip the specified bit (bit_index) in the byte at position char_index
+                byte_array[char_index] ^= 1 << bit_index
+
+                # Convert the bytearray back to a string
+                mutated_string = byte_array.decode('utf-8')
+                return mutated_string
+
+            except Exception:
+                flip_random_character(s)
+
+        def generate_extreme_string(s):
+            print('long str')
+            long_string = ''.join(random.choice(all_chars) for _ in range(256))
+            empty_string = ''
+            if random.randint(0,1) == 0:
+                return long_string
+            return empty_string
 
 
-mutated_bytestring = mutator.mutate_bytestring(b"heello123")
-# print(mutated_bytestring)
+        '''
+        Randomly choose a mutation method to mutate the string
+        '''
+        mutators = [
+            delete_random_character,
+            insert_random_character,
+            flip_random_character,
+            generate_extreme_string,
+        ]
+
+        mutator = mutators[random.randint(0, len(mutators)-1)]
+        return mutator(original_str)
+
+    def mutate_arr(self,array):
+        return random.choice(array)
+
+    def mutate_byte_list(self, byte_list):
+        random.seed(time.time_ns())
+
+        def replace_random_byte(byte_list):
+            if byte_list:
+                index = random.randint(0, len(byte_list) - 1)
+                byte_list[index] = random.randint(0, 255)
+            return byte_list
+
+        def add_random_byte(byte_list):
+            index = random.randint(0, len(byte_list))
+            byte_list.insert(index, random.randint(0, 255))
+            return byte_list
+
+        def remove_random_bytes(byte_list):
+            if byte_list:
+                # Determine how many bytes to remove, at least 1, up to the length of the list
+                num_to_remove = random.randint(1, len(byte_list))
+
+                for _ in range(num_to_remove):
+                    if (
+                        byte_list
+                    ):  # Check if list is not empty before attempting to remove
+                        index = random.randint(0, len(byte_list) - 1)
+                        del byte_list[index]
+
+            return byte_list
+
+        def flip_random_bit(byte_list):
+            if not byte_list:
+                return byte_list
+            byte_index = random.randint(0, len(byte_list) - 1)
+            byte_value = byte_list[byte_index]
+            bit_position = random.randint(0, 7)
+            byte_list[byte_index] = byte_value ^ (1 << bit_position)
+            return byte_list
+
+        def havoc(byte_list):
+
+            byte_list.insert(0, 0xFF)
+            return byte_list
+
+        def insert1(byte_list):
+            byte_list.insert(0, 1)
+            return byte_list
+
+        def insert0(byte_list):
+            byte_list.insert(0, 0)
+            return byte_list
+
+        def extend_with_random_bytes(byte_list):
+            num_bytes = random.randint(1, 10)
+            byte_list.extend(random.randint(0, 255) for _ in range(num_bytes))
+            return byte_list
+
+        def empty(byte_list):
+            return []
+
+        # List of mutators
+        mutators = [
+            insert1,
+            insert0,
+            replace_random_byte,
+            add_random_byte,
+            remove_random_bytes,
+            flip_random_bit,
+            havoc,
+            extend_with_random_bytes,
+            empty,
+        ]
+
+        # Select a random mutator and apply it
+        probabilities = [0.110, 0.110, 0.110, 0.113, 0.113, 0.113, 0.111, 0.113, 0.107]
+        mutator = random.choices(mutators, probabilities, k=1)[0]
+        # print(mutator)
+        # probability = random.random()
+        # if probability < 0.1:
+        #     return empty()
+        return mutator(byte_list)
+
+    def mutate(self, attributes):
+        '''
+        Take in A list of attributes to mutate, mutate one attribute at a time with equal probability
+        '''
 
 
-# print(mutator.shorten_bytestring(b"byebye123"))
+        mutated_pos = random.randint(0, len(attributes)-1)
 
-# print(mutator.lengthen_bytestring(b"byebye123"))
+        mutated_input = copy.deepcopy(attributes)
 
-# print(mutator.mutate_number(12))
+        if isinstance(attributes[mutated_pos], int):
+            mutated_input[mutated_pos] = self.mutate_number(attributes[mutated_pos])
+        elif isinstance(attributes[mutated_pos], str):
+            mutated_input[mutated_pos] = self.mutate_str(attributes[mutated_pos])
 
-print(bytearray([72, 101, 108, 108, 111, 255]))
+        return mutated_input
 
-# print(
-#     "mutator.mutate_bytearray(bytearray([72, 101, 108, 108, 111,255])) : ",
-#     mutator.mutate_bytearray(bytearray([72, 101, 108, 108, 111, 255])),
-# )
 
-# print(
-#     "mutator.shorten_bytearray(bytearray([72, 101, 108, 108, 111,255])) : ",
-#     mutator.shorten_bytearray(bytearray([72, 101, 108, 108, 111, 255])),
-# )
+# Test
+# mutator = Mutator()
+# byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+# print(byte_list)
+# mutated = mutator.mutate_byte_list(byte_list)
+# print(mutated)
 
-# print(
-#     "mutator.lengthen_bytearray(bytearray([72, 101, 108, 108, 111,255])) : ",
-#     mutator.lengthen_bytearray(bytearray([72, 101, 108, 108, 111, 255])),
-# )
+
+# byte_string = bytes([65, 66, 67, 68, 69])
+# print(byte_string)
+# bs = mutator.mutate_bytestring(byte_string)
+# print(bs)
+
+# byte_array = bytearray([65, 66, 67, 68, 69])
+# print(byte_array)
+# ba = mutator.mutate_bytearray(byte_array)
+# print(ba)
