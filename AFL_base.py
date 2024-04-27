@@ -2,70 +2,52 @@ from copy import deepcopy
 import string
 import random
 from Mutator import Mutator
-
+import hashlib
 import random
 from abc import abstractmethod
 
+
+# copy this file into which ever directory u want to use yr child fuzzer in
+# u probably want to use your child fuzzer within the directory of the target u are fuzzing
 class AFL_Fuzzer:
     def __init__(self):
-        self.seedQ = [None]
         self.failureQ = []
-        self.executed_lines_history = []
-        self.mutator = Mutator()
         self.pathCoverage = []
-        self.pathCoverage.append(('totalpaths', 0))
-
-    @abstractmethod
-    def init_seedQ(self):
-        # add first input to seedQ
-        pass
+        self.interestingPaths = []
+        self.mutator = Mutator()
+        self.numberOfTimes = 1
+        self.seedQ = []
 
     def ChooseNext(self):
-        # insert function
-        # Handle the case when seedQ is empty #seedQ will not be empty for ChooseNext
-        # if not self.seedQ:
-        #     return None
-        # # Find the input t with the maximum path coverage#consider changing to max line coverage?
-        # next_input = max(self.seedQ, key=self.seedQ.get, default=None)
+        # Check if seedQ is not empty
 
-        # next_input = self.seedQ[0]
+        if not self.seedQ:
+            return None  # Return None if the list is empty
+        if len(self.seedQ) == 1:
+            return self.seedQ.pop(0)[0]
+        # Initialize the index and the maximum number of covered lines
+        max_index = 0
+        max_covered_lines = self.seedQ[0][2]
 
-        # # Remove the extracted input from seedQ
-        # del self.seedQ[next_input]
-        # # Return the chosen input t
-        next_input = self.seedQ.pop(0)[0]
-        # print("ChooseNext : ", next_input)
-        return next_input
+        # Loop through the list to find the tuple with the highest number of covered_lines
+        for index, (_, _, covered_lines) in enumerate(self.seedQ):
+            if covered_lines > max_covered_lines:
+                max_covered_lines = covered_lines
+                max_index = index
+
+        # Remove and return the element with the highest covered_lines
+        return self.seedQ.pop(max_index)[0]
 
     def AssignEnergy(self, t):
         for i in self.pathCoverage:
             if isinstance(i[1], list) and t in i[1]:
-                return (512*(1-(i[2]/self.pathCoverage[0][1])))   
-        
+                return 20 * self.numberOfTimes * (1 - (i[2] / self.pathCoverage[0][1]))
+        return 512
+    
     def generate_random_str(self,len_limit):
         characters = string.ascii_letters + string.digits + string.punctuation
         result_str = ''.join(random.choice(characters) for _ in range(len_limit))
         return result_str
-
-    def mutate_str(self, input):
-        #return self.mutator.mutate_str(input_str=input)
-        mutator_func = random.choice(self.mutator.mutators)
-        print("Mutator Function in Use:",mutator_func.__name__ )
-        fuzzed_input=mutator_func(input)
-        print("Fuzzed Input:",fuzzed_input)
-        print('\n')
-        return fuzzed_input
-
-    # def mutate_default_data_type(self, input):
-    #     # insert function
-    #     mutator = Mutator()
-    #     # probabilities to be determined after pilot fuzzing, these are just test values set
-    #     mutator_probabilities = [0.1, 0.1, 0.2, 0.2, 0.2, 0.1, 0.1]
-    #     selected_mutator = random.choices(
-    #         mutator.mutators, weights=mutator_probabilities
-    #     )[0]
-    #     mutated_input = selected_mutator(input)
-    #     return mutated_input
 
     @abstractmethod
     def mutate_t(self, t):
@@ -78,73 +60,78 @@ class AFL_Fuzzer:
         # return crashOrBug, t_prime_executed_lines
         pass
 
-    def isInteresting(self, coverage_data):
-        isInteresting = True
-        executed_lines = {}
-        for filename, file_data in coverage_data["files"].items():
-            executed_lines[filename] = set(file_data["executed_lines"])
+    def get_bucket_index(self, taken):
+        bucket_index = -1
+        buckets = {
+            "A": {"start": 1, "end": 1},
+            "B": {"start": 2, "end": 2},
+            "C": {"start": 3, "end": 3},
+            "D": {"start": 4, "end": 7},
+            "E": {"start": 8, "end": 15},
+            "F": {"start": 16, "end": 31},
+            "G": {"start": 32, "end": 127},
+            "H": {"start": 128, "end": float("inf")},
+        }
 
-        if len(self.executed_lines_history) == 0:
+        for key in buckets:
+            if taken >= buckets[key]["start"] and taken <= buckets[key]["end"]:
+                bucket_index = key
+        return bucket_index
 
-            isInteresting = True
-        else:
-            for prev_executed_lines in self.executed_lines_history:
-                if prev_executed_lines == executed_lines:
+    def process_coverage(self, coverage):
+        branches = []
+        path_len = 0
+        for filename, lines in coverage.items():
+            for lineno in lines:
+                branch_str = "{}_{}_{}".format(filename, lineno, self.get_bucket_index(lines[lineno]))
+                branches.append(branch_str)
+                path_len += 1
+        branches.sort()
+        hash_object = hashlib.md5(",".join(branches).encode())
+        short_string = hash_object.hexdigest()
+        return short_string
 
-                    isInteresting = False
-                    break
-        self.executed_lines_history.append(executed_lines)
-        print("isInteresting : ", isInteresting)
-        return isInteresting
+    def isInteresting(self, coverage):
+        path = self.process_coverage(coverage)
+        if path not in self.interestingPaths:
+            self.interestingPaths.append(path)
+            #print("t is interesting")
+            return True
+        #print("t is not interesting")
+        return False
 
-    def fuzz(self):
-        while len(self.seedQ) >= 1:  # and timeout?
-            t = self.ChooseNext()
-            E = self.AssignEnergy(t)
-            for i in range(1, E):
-                # print("i = ", i)
-                fuzz_var_index = random.randint(0, t.getNumOfFuzzableInputs())
-                t_prime = self.mutate_t(t, fuzz_var_index)
-                # print("t_prime after mutate : ", t)
-                crashOrBug, t_prime_coverage_data = self.runTestRevealsCrashOrBug(
-                    t_prime
-                )
-                print("t_prime_coverage_data")
-                print(t_prime_coverage_data)
-                if crashOrBug:
-                    self.FailureQ.append(t_prime)
-                    for i, tup in enumerate(self.pathCoverage):
-                        if t_prime_coverage_data == tup[1]:
-                            tup[0].append(t_prime)
-                            tup[2] +=1
-                            self.pathCoverage[0][1] += 1
-                            changed = True
-                        if i == len(self.pathCoverage)-1 and changed!=True:
-                            self.pathCoverage.append((t_prime_coverage_data, 1))                            
-                elif self.isInteresting(t_prime_coverage_data) == True:
-                    self.seedQ.append((t_prime, t_prime_coverage_data))
-                    if t_prime_coverage_data == tup[1]:
-                            tup[0].append(t_prime)
-                            tup[2] +=1
-                            self.pathCoverage[0][1] += 1
-                            changed = True
-                    if i == len(self.pathCoverage)-1 and changed!=True:
-                            self.pathCoverage.append((t_prime_coverage_data, 1))            
-        print("all coverage data")
-        for i in range(len(self.seedQ)):
-            print(self.seedQ[i][1])
-
-
-# def Main():
-#     while SeedQ[0] != None: # and timeout?
-#         t = ChooseNext(SeedQ)
-#         E = AssignEnergy(t)
-#         for i in range (1, E):
-#             t_prime = MutateInput(t)
-#             if t_prime == 1:
-#                 FailureQ.append(t_prime)
-#             elif isInteresting(t_prime) == True:
-#                 SeedQ.append(t_prime)
+    # async def fuzz(self):
+    #     while len(self.seedQ) >= 1:  # and timeout?
+    #         t = self.ChooseNext()
+    #         E = self.AssignEnergy(t)
+    #         for i in range(1, E):
+    #             t_prime = self.mutate_t(t)
+    #             crashOrBug, t_prime_coverage_data, covered_lines = (
+    #                 #await self.runTestRevealsCrashOrBug(t_prime)
+    #             )
+    #             if crashOrBug:
+    #                 print("adding t to failureQ")
+    #                 self.failureQ.append(t_prime)
+    #                 for i, tup in enumerate(self.pathCoverage):
+    #                     if t_prime_coverage_data == tup[1]:
+    #                         tup[0].append(t_prime)
+    #                         tup[2] += 1
+    #                         self.pathCoverage[0][1] += 1
+    #                         changed = True
+    #                     if i == len(self.pathCoverage) - 1 and changed != True:
+    #                         self.pathCoverage.append((t_prime_coverage_data, 1))
+    #             elif self.isInteresting(t_prime_coverage_data) == True:
+    #                 print("adding t to seedQ")
+    #                 self.seedQ.append((t_prime, t_prime_coverage_data, covered_lines))
+    #                 for i, tup in enumerate(self.pathCoverage):
+    #                     if t_prime_coverage_data == tup[1]:
+    #                         tup[0].append(t_prime)
+    #                         tup[2] += 1
+    #                         self.pathCoverage[0][1] += 1
+    #                         changed = True
+    #                     if i == len(self.pathCoverage) - 1 and changed != True:
+    #                         self.pathCoverage.append((t_prime_coverage_data, 1))
+    #         self.numberOfTimes += 1
 
 
 def printDict(dictName, dict):
