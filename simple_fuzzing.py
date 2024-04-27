@@ -22,14 +22,7 @@ class CoAPFuzzer(AFL_Fuzzer):
         self.resource_paths=['/basic', '/storage', '/child', '/separate', '/etag', '/', '/big', '/encoding', '/advancedSeparate', '/void', '/advanced', '/long', '/xml']
         self.msgtypes=["CON", "NON", "ACK", "RST"]
         self.method=['GET', 'POST', 'PUT', 'DELETE','OBSERVE','DISCOVER']
-        self.functions=[self.fuzz_payload,
-                        self.fuzz_header,
-                        self.fuzz_resource_path,
-                        self.fuzz_message_type,
-                        self.fuzz_method]
-        self.seedQ = []
         self.analyzer = CoAPCoverageMiddleware()
-        self.coverage_hashes = set()
 
     def init_seedQ(self,seedQlen):
         for i in range(seedQlen):
@@ -86,23 +79,14 @@ class CoAPFuzzer(AFL_Fuzzer):
         header_bytes += token.encode('utf-8')
         return header_bytes
     
-    def isInteresting(self, seed_input):
-        try:
-            # Get coverage data
-            coverage_data = self.analyzer.analyze_coverage()
-            # Calculate hash of coverage data
-            coverage_hash = self.analyzer.hash_dict(coverage_data)
-            # Check if new coverage is picked up
-            if coverage_hash not in self.coverage_hashes:
-                # Further mutate the input and add to seedQ
-                mutated_input = self.mutate_t(seed_input, 0)
-                self.seedQ.append(mutated_input)
-
-                # Add coverage hash to set
-                self.coverage_hashes.add(coverage_hash)
-        except Exception as e:
-            print("Error updating seedQ with coverage:", e)
-            # Log the error if needed
+    def isInterestingCoAP(self,seed_input):
+        # Get coverage data (assuming you have a method to retrieve coverage data)
+        coverage_data = self.analyzer.analyze_coverage()
+        # Use isInteresting method from AFL_Fuzzer
+        if self.isInteresting(coverage_data):
+            #print("Coverage is interesting!")
+            mutated_input = self.mutate_t(seed_input, 0)
+            self.seedQ.append(mutated_input)
 
     def runTestRevealsCrashOrBug(self, t_prime ,response):
         message_type = response.type
@@ -149,35 +133,21 @@ class CoAPFuzzer(AFL_Fuzzer):
                     # print("Fuzzed message type:", fuzzed_msgtype)  # Print fuzzed message type
                     if fuzzed_method == 'GET':
                         response = self.client.get(resource_path, payload=fuzzed_payload, header=fuzzed_header ,msg_type=defines.Types[fuzzed_msgtype])
-                        #request=self.client.mk_request(fuzzed_method,resource_path)
                     elif fuzzed_method == 'POST':
                         response = self.client.post(resource_path, payload=fuzzed_payload, header=fuzzed_header, msg_type=defines.Types[fuzzed_msgtype])
-                        #request=self.client.mk_request(fuzzed_method,resource_path)
                     elif fuzzed_method == 'PUT':
                         response = self.client.put(resource_path, payload=fuzzed_payload, header=fuzzed_header,msg_type=defines.Types[fuzzed_msgtype])
-                        #request=self.client.mk_request(fuzzed_method,resource_path)
                     elif fuzzed_method == 'DELETE':
                         response = self.client.delete(resource_path, payload=fuzzed_payload, header=fuzzed_header,msg_type=defines.Types[fuzzed_msgtype])
-                        #request=self.client.mk_request(fuzzed_method,resource_path)
                     elif fuzzed_method == 'OBSERVE':
                         response = self.client.observe(resource_path, callback=None, msg_type=defines.Types[fuzzed_msgtype])
-                        #request=self.client.mk_request(fuzzed_method,resource_path)
                     elif fuzzed_method == 'DISCOVER':
                         response = self.client.discover(callback=None, msg_type=defines.Types[fuzzed_msgtype])
-                        #request=self.client.mk_request(fuzzed_method,resource_path)
                     print(response.pretty_print())
-
-
 
                     # Check for crash or bug
                     #self.runTestRevealsCrashOrBug(seed_input,response)
-
-
-
-                    # Further mutate the input and add to seedQ
-                    # mutated_input = self.mutate_t(seed_input, 0)
-                    # self.seedQ.append(mutated_input)
-                    self.isInteresting(seed_input)
+                    self.isInterestingCoAP(seed_input)
                     # Remove the first input from seedQ
                     self.seedQ.pop(0)
 
@@ -186,16 +156,6 @@ class CoAPFuzzer(AFL_Fuzzer):
                     print("Fuzzing error:", e)
             else:
                 print("Seed input is None")
-
-        # Send fuzzed GET request with the fuzzed payload and path "/basic/"
-        # response = self.client.get("/basic",payload=fuzzed_payload, header=fuzzed_header)
-        # response = self.client.fuzzed_method(resource_path,payload=fuzzed_payload, header=fuzzed_header)
-        # print(response.pretty_print())
-
-                # Send fuzzed GET request with the fuzzed payload and path "/basic/"
-                # response = self.client.get("/basic",payload=fuzzed_payload, header=fuzzed_header)
-                # response = self.client.fuzzed_method(resource_path,payload=fuzzed_payload, header=fuzzed_header)
-                # print(response.pretty_print()) 
 
 
     def close_connection(self):
@@ -208,22 +168,14 @@ def main():
     # Configure logging
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
-
-    # Start coverage measurement
-    # cov = coverage.Coverage()
-    # cov.start()
-
     fuzzer = CoAPFuzzer(host, port)
-    #analyzer=CoAPCoverageMiddleware()
     #while(1):
-    seedQlength=1000
+    seedQlength=20
     fuzzer.init_seedQ(seedQlength)
 
     try:
-        # fuzzer.analyzer.start_coverage()
         number=0
         while fuzzer.seedQ:
-        #for i in range(seedQlength):
             print("Iteration:",number)
             fuzzer.analyzer.start_coverage()
             fuzzer.fuzz_and_send_requests(num_requests=1, num_bytes=5,token_message_length=8)
@@ -239,9 +191,7 @@ def main():
         logger.error("Fuzzing error: %s", e)
 
     finally:
-        
         fuzzer.analyzer.stop_coverage()
-
         fuzzer.close_connection()
 
 if __name__ == "__main__":
