@@ -82,46 +82,51 @@ class CoAPFuzzer(AFL_Fuzzer):
     def isInterestingCoAP(self,seed_input):
         # Get coverage data (assuming you have a method to retrieve coverage data)
         coverage_data = self.analyzer.analyze_coverage()
+        self.pathCoverage.append(coverage_data)
         # Use isInteresting method from AFL_Fuzzer
         if self.isInteresting(coverage_data):
             #print("Coverage is interesting!")
             mutated_input = self.mutate_t(seed_input, 0)
             self.seedQ.append(mutated_input)
 
-    def runTestRevealsCrashOrBug(self, t_prime ,response):
-        message_type = response.type
-        if message_type == 'CON':
-        # Confirmable message type
-            if t_prime.method in ['GET', 'POST', 'PUT', 'DELETE']:
-                # Compatible methods for CON messages
-                # Perform test or validation specific to CON messages
-                print("Performing test for CON message with method:", t_prime.method)
-            else:
-                print("Error: Incompatible method", t_prime.method, "for CON message type.")
-        elif message_type == 'NON':
-            # Non-confirmable message type
-            if t_prime.method in ['GET', 'OBSERVE']:
-                # Compatible methods for NON messages
-                # Perform test or validation specific to NON messages
-                print("Performing test for NON message with method:", t_prime.method)
-            else:
-                print("Error: Incompatible method", t_prime.method, "for NON message type.")
-        elif message_type == 'ACK':
-            # Acknowledgement message type
-            # Perform actions specific to ACK messages
-            print("Received ACK message.")
-        elif message_type == 'RST':
-            # Reset message type
-            # Perform actions specific to RST messages
-            print("Received RST message.")
-
+    def runTestRevealsCrashOrBug(self, seed_input, response):
+        try:
+            #print("Running test to reveal crash or bug...")
+            message_type = response.type
+            if message_type == defines.Types['CON']:
+                # Confirmable message type
+                if seed_input.method in ['GET', 'POST', 'PUT', 'DELETE']:
+                    # Compatible methods for CON messages
+                    # Perform test or validation specific to CON messages
+                    print("Performing test for CON message with method:", seed_input.method)
+                else:
+                    print("Error: Incompatible method", seed_input.method, "for CON message type.")
+            elif message_type == defines.Types['NON']:
+                # Non-confirmable message type
+                if seed_input.method in ['GET', 'OBSERVE']:
+                    # Compatible methods for NON messages
+                    # Perform test or validation specific to NON messages
+                    print("Performing test for NON message with method:", seed_input.method)
+                else:
+                    print("Error: Incompatible method", seed_input.method, "for NON message type.")
+            elif message_type == defines.Types['ACK']:
+                # Acknowledgement message type
+                # Perform actions specific to ACK messages
+                print("Received ACK message.")
+            elif message_type == defines.Types['RST']:
+                # Reset message type
+                # Perform actions specific to RST messages
+                print("Received RST message.")
+        except Exception as e:
+            # Print any errors during bug testing
+            print("Error during bug testing:", e)
 
     def fuzz_and_send_requests(self, num_requests, num_bytes, token_message_length):
         for _ in range(num_requests):
             # print(_)
             #print("Seed queue length before accessing seed input:", len(self.seedQ))
             seed_input = self.seedQ[0]
-            seed_input.print_CoAPInput()
+            #seed_input.print_CoAPInput()
             if seed_input is not None:  # Check if seed_input is not None
                 try:
                     resource_path = seed_input.resourcepath
@@ -146,7 +151,7 @@ class CoAPFuzzer(AFL_Fuzzer):
                     print(response.pretty_print())
 
                     # Check for crash or bug
-                    #self.runTestRevealsCrashOrBug(seed_input,response)
+                    self.runTestRevealsCrashOrBug(seed_input,response)
                     self.isInterestingCoAP(seed_input)
                     # Remove the first input from seedQ
                     self.seedQ.pop(0)
@@ -170,7 +175,7 @@ def main():
     logger = logging.getLogger(__name__)
     fuzzer = CoAPFuzzer(host, port)
     #while(1):
-    seedQlength=20
+    seedQlength=10
     fuzzer.init_seedQ(seedQlength)
 
     try:
