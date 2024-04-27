@@ -97,43 +97,39 @@ class AFL_Fuzzer(ABC):
         print("isInteresting : ", isInteresting)
         return isInteresting
 
-    def fuzz(self):
+    async def fuzz(self):
         while len(self.seedQ) >= 1:  # and timeout?
             t = self.ChooseNext()
             E = self.AssignEnergy(t)
             for i in range(1, E):
-                # print("i = ", i)
-                fuzz_var_index = random.randint(0, t.getNumOfFuzzableInputs())
-                t_prime = self.mutate_t(t, fuzz_var_index)
-                # print("t_prime after mutate : ", t)
-                crashOrBug, t_prime_coverage_data = self.runTestRevealsCrashOrBug(
-                    t_prime
+                t_prime = self.mutate_t(t)
+                crashOrBug, t_prime_coverage_data, covered_lines = (
+                    await self.runTestRevealsCrashOrBug(t_prime)
                 )
-                print("t_prime_coverage_data")
-                print(t_prime_coverage_data)
+                path = self.process_coverage(t_prime_coverage_data)
                 if crashOrBug:
-                    self.FailureQ.append(t_prime)
+                    print("adding t to failureQ")
+                    self.failureQ.append(t_prime)
                     for i, tup in enumerate(self.pathCoverage):
-                        if t_prime_coverage_data == tup[1]:
+                        if path == tup[1]:
                             tup[0].append(t_prime)
-                            tup[2] +=1
+                            tup[2] += 1
                             self.pathCoverage[0][1] += 1
                             changed = True
-                        if i == len(self.pathCoverage)-1 and changed!=True:
-                            self.pathCoverage.append((t_prime_coverage_data, 1))                            
-                elif self.isInteresting(t_prime_coverage_data) == True:
-                    self.seedQ.append((t_prime, t_prime_coverage_data))
-                    if t_prime_coverage_data == tup[1]:
+                        if i == len(self.pathCoverage) - 1 and changed != True:
+                            self.pathCoverage.append((path, 1))
+                elif self.isInteresting(path) == True:
+                    print("adding t to seedQ")
+                    self.seedQ.append((t_prime, path, covered_lines))
+                    for i, tup in enumerate(self.pathCoverage):
+                        if path == tup[1]:
                             tup[0].append(t_prime)
-                            tup[2] +=1
+                            tup[2] += 1
                             self.pathCoverage[0][1] += 1
                             changed = True
-                    if i == len(self.pathCoverage)-1 and changed!=True:
-                            self.pathCoverage.append((t_prime_coverage_data, 1))            
-        print("all coverage data")
-        for i in range(len(self.seedQ)):
-            print(self.seedQ[i][1])
-
+                        if i == len(self.pathCoverage) - 1 and changed != True:
+                            self.pathCoverage.append((path, 1))
+            self.numberOfTimes += 1
 
 # def Main():
 #     while SeedQ[0] != None: # and timeout?

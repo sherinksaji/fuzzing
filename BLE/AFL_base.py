@@ -41,7 +41,7 @@ class AFL_Fuzzer(ABC):
     def AssignEnergy(self, t):
         for i in self.pathCoverage:
             if isinstance(i[1], list) and t in i[1]:
-                return 20 * self.numberOfTimes * (1 - (i[2] / self.pathCoverage[0][1]))
+                return 20 * (1 - (i[2] / self.pathCoverage[0][1]))
         return 512
 
     @abstractmethod
@@ -78,7 +78,7 @@ class AFL_Fuzzer(ABC):
         path_len = 0
         for key in coverage:
             branch_str = (
-                key[0] + "_" + str(key[1]) + "_" + self.get_bucket_index(coverage[key])
+                key[0] + "_" + str(key[1]) + "_" + self.get_bucket_index(coverage[key]) 
             )
             branches.append(branch_str)
             path_len += 1
@@ -89,8 +89,8 @@ class AFL_Fuzzer(ABC):
 
         return short_string
 
-    def isInteresting(self, coverage):
-        path = self.process_coverage(coverage)
+    def isInteresting(self, path):
+        # path = self.process_coverage(coverage)
         if path not in self.interestingPaths:
             self.interestingPaths.append(path)
             print("t is interesting")
@@ -107,28 +107,29 @@ class AFL_Fuzzer(ABC):
                 crashOrBug, t_prime_coverage_data, covered_lines = (
                     await self.runTestRevealsCrashOrBug(t_prime)
                 )
+                path = self.process_coverage(t_prime_coverage_data)
                 if crashOrBug:
                     print("adding t to failureQ")
                     self.failureQ.append(t_prime)
                     for i, tup in enumerate(self.pathCoverage):
-                        if t_prime_coverage_data == tup[1]:
+                        if path == tup[1]:
                             tup[0].append(t_prime)
                             tup[2] += 1
                             self.pathCoverage[0][1] += 1
                             changed = True
                         if i == len(self.pathCoverage) - 1 and changed != True:
-                            self.pathCoverage.append((t_prime_coverage_data, 1))
-                elif self.isInteresting(t_prime_coverage_data) == True:
+                            self.pathCoverage.append((path, 1))
+                elif self.isInteresting(path) == True:
                     print("adding t to seedQ")
-                    self.seedQ.append((t_prime, t_prime_coverage_data, covered_lines))
+                    self.seedQ.append((t_prime, path, covered_lines))
                     for i, tup in enumerate(self.pathCoverage):
-                        if t_prime_coverage_data == tup[1]:
+                        if path == tup[1]:
                             tup[0].append(t_prime)
                             tup[2] += 1
                             self.pathCoverage[0][1] += 1
                             changed = True
                         if i == len(self.pathCoverage) - 1 and changed != True:
-                            self.pathCoverage.append((t_prime_coverage_data, 1))
+                            self.pathCoverage.append((path, 1))
             self.numberOfTimes += 1
 
 
