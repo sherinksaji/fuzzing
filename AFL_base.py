@@ -1,22 +1,21 @@
 from copy import deepcopy
-import string
-import random
 from mutator import Mutator
-
-import random
+import hashlib
 from abc import ABC, abstractmethod
 
 
 # copy this file into which ever directory u want to use yr child fuzzer in
 # u probably want to use your child fuzzer within the directory of the target u are fuzzing
 class AFL_Fuzzer(ABC):
-    def __init__(self):
-        self.seedQ = [None]
+    def __init__(self, ):
+        seedQ = []
+        self.seedQ = seedQ
         self.failureQ = []
-        self.executed_lines_history = []
-        self.mutator = Mutator()
         self.pathCoverage = []
-        self.pathCoverage.append(('totalpaths', 0))
+        self.pathCoverage.append(('totalPaths', 0))
+        self.interestingPaths = []
+        self.mutator = Mutator()
+        self.numberOfTimes = 1
 
     @abstractmethod
     def init_seedQ(self):
@@ -44,17 +43,52 @@ class AFL_Fuzzer(ABC):
     def AssignEnergy(self, t):
         for i in self.pathCoverage:
             if isinstance(i[1], list) and t in i[1]:
-                return (512*(1-(i[2]/self.pathCoverage[0][1])))   
+                if self.pathCoverage[0][1] == 0:
+                    return 512
+                return 512 * self.numberOfTimes * (1 - (i[2] / self.pathCoverage[0][1]))
         
-    def generate_random_str(self):
-        characters = string.ascii_letters + string.digits + string.punctuation
-        result_str = "".join(random.choice(characters) for _ in range(self.len_limit))
-        self.seedQ.append(result_str)
+    def get_bucket_index(self, taken):
+        bucket_index = -1
+        buckets = {
+            "A": {"start": 1, "end": 1},
+            "B": {"start": 2, "end": 2},
+            "C": {"start": 3, "end": 3},
+            "D": {"start": 4, "end": 7},
+            "E": {"start": 8, "end": 15},
+            "F": {"start": 16, "end": 31},
+            "G": {"start": 32, "end": 127},
+            "H": {"start": 128, "end": float("inf")},
+        }
 
-        return result_str
+        for key in buckets:
+            if taken >= buckets[key]["start"] and taken <= buckets[key]["end"]:
+                bucket_index = key
+        return bucket_index
 
-    def mutate_str(self, input):
-        return self.mutator.mutate_str(input_str=input)
+    def process_coverage(self, coverage):
+        branches = []
+        path_len = 0
+        for key in coverage:
+            branch_str = (
+                key[0] + "_" + str(key[1]) + "_" + self.get_bucket_index(coverage[key]) 
+            )
+            branches.append(branch_str)
+            path_len += 1
+        branches.sort()
+        # print("".join(branches))
+        hash_object = hashlib.md5(",".join(branches).encode())
+        short_string = hash_object.hexdigest()
+
+        return short_string
+
+    def isInteresting(self, path):
+        # path = self.process_coverage(coverage)
+        if path not in self.interestingPaths:
+            self.interestingPaths.append(path)
+            print("t is interesting")
+            return True
+        print("t is not interesting")
+        return False
 
     # def mutate_default_data_type(self, input):
     #     # insert function
@@ -77,25 +111,6 @@ class AFL_Fuzzer(ABC):
     def runTestRevealsCrashOrBug(self, t_prime):
         # return crashOrBug, t_prime_executed_lines
         pass
-
-    def isInteresting(self, coverage_data):
-        isInteresting = True
-        executed_lines = {}
-        for filename, file_data in coverage_data["files"].items():
-            executed_lines[filename] = set(file_data["executed_lines"])
-
-        if len(self.executed_lines_history) == 0:
-
-            isInteresting = True
-        else:
-            for prev_executed_lines in self.executed_lines_history:
-                if prev_executed_lines == executed_lines:
-
-                    isInteresting = False
-                    break
-        self.executed_lines_history.append(executed_lines)
-        print("isInteresting : ", isInteresting)
-        return isInteresting
 
     async def fuzz(self):
         while len(self.seedQ) >= 1:  # and timeout?

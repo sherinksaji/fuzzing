@@ -1,9 +1,6 @@
 from copy import deepcopy
-import string
-import random
 from mutator import Mutator
 import hashlib
-import random
 from abc import ABC, abstractmethod
 
 
@@ -14,6 +11,7 @@ class AFL_Fuzzer(ABC):
         self.seedQ = seedQ
         self.failureQ = []
         self.pathCoverage = []
+        self.pathCoverage.append(('totalPaths', 0))
         self.interestingPaths = []
         self.mutator = Mutator()
         self.numberOfTimes = 1
