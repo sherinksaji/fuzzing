@@ -1,9 +1,6 @@
 from copy import deepcopy
-import string
-import random
 from mutator import Mutator
 import hashlib
-import random
 from abc import ABC, abstractmethod
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -36,7 +33,7 @@ class AFL_Fuzzer(ABC):
         for i in self.pathCoverage:
             if isinstance(i[0], list) and t in i[0]:
                 return 512 * self.numberOfTimes * (1 - (i[2] / self.pathCoverage[0][1]))
-        return 50
+        return 512
 
     # def AssignEnergy(self, t):
     #     for i in self.pathCoverage:
