@@ -13,6 +13,7 @@ class AFL_Fuzzer:
     def __init__(self):
         self.failureQ = []
         self.pathCoverage = []
+        self.pathCoverage[0] = ("totalPaths" , 0)
         self.interestingPaths = []
         self.mutator = Mutator()
         self.numberOfTimes = 1
@@ -41,9 +42,10 @@ class AFL_Fuzzer:
     def AssignEnergy(self, t):
         for i in self.pathCoverage:
             if isinstance(i[1], list) and t in i[1]:
-                return 20 * self.numberOfTimes * (1 - (i[2] / self.pathCoverage[0][1]))
-        return 512
-    
+                if self.pathCoverage[0][1] == 0:
+                    return 512
+                return 512 * self.numberOfTimes * (1 - (i[2] / self.pathCoverage[0][1]))
+        
     def generate_random_str(self,len_limit):
         characters = string.ascii_letters + string.digits + string.punctuation
         result_str = ''.join(random.choice(characters) for _ in range(len_limit))
