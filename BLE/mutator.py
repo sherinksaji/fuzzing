@@ -83,7 +83,7 @@ class Mutator:
 
         return mutator(original_number)
 
-    def mutate_bytestring(self, bs):
+    def mutate_bytestring(self, bs, mutators_usable=[1, 2, 3, 4, 5, 6]):
 
         def replace_random_byte(bs):
 
@@ -135,6 +135,7 @@ class Mutator:
             return bytes(ba)
 
         # List of mutators
+
         mutators = [
             replace_random_byte,
             add_random_byte,
@@ -207,7 +208,7 @@ class Mutator:
         mutator = random.choice(mutators)
         return mutator(ba)
 
-    def mutate_byte_list(self, byte_list):
+    def mutate_byte_list(self, byte_list, usable_mutators=[0, 1, 2, 3, 4, 5, 6, 7]):
         random.seed(time.time_ns())
 
         def replace_random_byte(byte_list):
@@ -266,21 +267,28 @@ class Mutator:
             return []
 
         # List of mutators
-        mutators = [
-            insert1,
-            insert0,
-            replace_random_byte,
-            add_random_byte,
-            remove_random_bytes,
-            flip_random_bit,
-            havoc,
-            extend_with_random_bytes,
-            empty,
-        ]
+        mutators = []
+        for i in usable_mutators:
+            if i == 0:
+                mutators.append(insert1)
+            elif i == 1:
+                mutators.append(insert0)
+            elif i == 2:
+                mutators.append(replace_random_byte)
+            elif i == 3:
+                mutators.append(add_random_byte)
+            elif i == 4:
+                mutators.append(remove_random_bytes)
+            elif i == 5:
+                mutators.append(flip_random_bit)
+            elif i == 6:
+                mutators.append(havoc)
+            elif i == 7:
+                mutators.append(extend_with_random_bytes)
 
-        # Select a random mutator and apply it
-        probabilities = [0.110, 0.110, 0.110, 0.113, 0.113, 0.113, 0.111, 0.113, 0.107]
-        mutator = random.choices(mutators, probabilities, k=1)[0]
+        print(mutators)
+
+        mutator = random.choices(mutators)[0]
         # print(mutator)
         # probability = random.random()
         # if probability < 0.1:
@@ -289,11 +297,11 @@ class Mutator:
 
 
 # Test
-# mutator = Mutator()
-# byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-# print(byte_list)
-# mutated = mutator.mutate_byte_list(byte_list)
-# print(mutated)
+mutator = Mutator()
+byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+print(byte_list)
+mutated = mutator.mutate_byte_list(byte_list, [7])
+print(mutated)
 
 
 # byte_string = bytes([65, 66, 67, 68, 69])

@@ -30,7 +30,9 @@ from AFL_base import AFL_Fuzzer
 import subprocess
 import random
 import psutil
-from bleInput import BLE_ReadATT_Input, BLE_WriteATT_Input, BLE_ByteList_Input
+import pandas as pd
+
+import matplotlib.pyplot as plt
 
 
 async def wait_for_scan_signal():
@@ -134,9 +136,10 @@ def start_process_in_new_terminal(command, window_title=""):
     """
     Starts a command in a new GNOME Terminal window.
     """
-    subprocess.Popen(
+    process = subprocess.Popen(
         ["gnome-terminal", "--title", window_title, "--", "bash", "-c", command]
     )
+    return process.pid
 
 
 def start_ble_original():
@@ -153,7 +156,8 @@ def start_zephyr():
     zephyr_command = (
         "GCOV_PREFIX=$(pwd) GCOV_PREFIX_STRIP=3 ./zephyr.exe --bt-dev=127.0.0.1:9000"
     )
-    start_process_in_new_terminal(zephyr_command, "Zephyr Execution")
+    pid = start_process_in_new_terminal(zephyr_command, "Zephyr Execution")
+    return pid
 
 
 def is9000Alive():
@@ -187,58 +191,59 @@ def getCoverage(lcov_file):
     return hit_counts
 
 
-def getCoveragePercent(lcov_file):
-    lcov_path = "lcov_coverage/" + lcov_file
-    with open(lcov_path, "r") as file:
-        content = file.readlines()
+def getCoveragePercentage(lcov_file):
+    fullDir = os.path.join("lcov_coverage", lcov_file)
+    lcov_summary_command = f"lcov --rc lcov_branch_coverage=1 --summary {fullDir}"
+    result = subprocess.run(
+        lcov_summary_command, shell=True, text=True, capture_output=True
+    )
 
-    total_lines = 0
-    covered_lines = 0
+    lines_coverage = next(
+        (line for line in result.stdout.splitlines() if "lines......:" in line), None
+    )
+    if lines_coverage:
 
-    for line in content:
-        if line.startswith("DA:"):
-            line_info = line.strip().split(",")
-            total_lines += 1
-            if int(line_info[1]) > 0:  # Check if the line is covered
-                covered_lines += 1
-    # print("covered_lines : ", covered_lines)
-    # print("total_lines : ", total_lines)
-    if total_lines > 0:
-        coverage_percent = (covered_lines / total_lines) * 100
+        coverage_percentage_with_bracket = lines_coverage.split(":")[1]
+        coverage_percentage_str = coverage_percentage_with_bracket.split("%")[0]
+        coverage_percentage = float(coverage_percentage_str)
+
+        return coverage_percentage
     else:
-        coverage_percent = 0
-
-    return covered_lines
+        return None
 
 
-class BLE_Fuzzer(AFL_Fuzzer):
-    def __init__(self, seedQ):
+class BLE_Fuzzer(
+    AFL_Fuzzer,
+):
+    def __init__(self, seedQ, usable_mutators=[0, 1, 2, 3, 4, 5, 6, 7]):
         super().__init__(seedQ)
+        self.usable_mutators = usable_mutators
 
     def mutate_t(self, t_prime):
         mutator = Mutator()
-        t_prime = mutator.mutate_byte_list(t_prime)
+        t_prime = mutator.mutate_byte_list(t_prime, self.usable_mutators)
         return t_prime
 
     async def runTestRevealsCrashOrBug(self, t_prime):
         runRevealsCrashOrBug = False
         coverage = {}
         print("Running with T_prime:", t_prime)
-        cmd1 = "python3 run_ble_original.py"
-        cmd2 = "GCOV_PREFIX=$(pwd) GCOV_PREFIX_STRIP=3 ./zephyr.exe --bt-dev=127.0.0.1:9000"
+
         delete_file("t_prime.txt")
         write_t_prime(t_prime)
-
-        # Define log files for each command
-        log_file1 = "output_cmd1.log"
-        log_file2 = "output_cmd2.log"
 
         # Start both commands asynchronously and log their outputs to different files
         # task1 = asyncio.create_task(run_command(cmd1, "RunBLE", log_file1))
         start_ble_original()
         await wait_for_scan_signal()
-        start_zephyr()
+        zephyr_pid = start_zephyr()
+        # top_command = f"top -p {zephyr_pid}"
+        # top_process = subprocess.Popen(top_command, shell=True, stdout=subprocess.PIPE)
+        # top_output = top_process.communicate()[0].decode("utf-8")
+        # print("Top output:")
 
+        # top_process.kill()
+        # print(top_output)
         while is9000Alive():
             await asyncio.sleep(0.5)
         filename = "result.json"
@@ -259,9 +264,8 @@ class BLE_Fuzzer(AFL_Fuzzer):
             runRevealsCrashOrBug = True
         lcov_file = result_dict["lcovFilename"]
         coverage = getCoverage(lcov_file)
-        covered_lines = getCoveragePercent(lcov_file)
 
-        return runRevealsCrashOrBug, coverage, covered_lines
+        return runRevealsCrashOrBug, coverage
 
 
 # async def run_fuzzer():
@@ -281,5 +285,33 @@ delete_file("bugAndCrashReport.txt")
 delete_file("result.json")
 delete_file("scan_signal.txt")
 seedQ = [([0x01], None, None)]
-bleFuzzer = BLE_Fuzzer(seedQ)
-asyncio.run(bleFuzzer.fuzz())
+
+sessions = ["Session #1", "Session #2"]
+# sessions = ["Session #1", "Session #2", "Session #3", "Session #4", "Session #5"]
+numCrashOrBugLs = []
+numInterestingTestCasesLs = []
+
+for i in range(2):
+    bleFuzzer = BLE_Fuzzer(seedQ)
+    asyncio.run(bleFuzzer.fuzz())
+    numCrashOrBugLs.append(bleFuzzer.numberOfCrashOrBug)
+    numInterestingTestCasesLs.append(len(bleFuzzer.interestingPaths))
+
+data = {
+    "Sessions": sessions,
+    "Interesting Tests": numCrashOrBugLs,
+    "Bugs and Crashes": numInterestingTestCasesLs,
+}
+
+df = pd.DataFrame(data)
+ax = df.plot(
+    x="Sessions",
+    y=["Interesting Tests", "Bugs and Crashes"],
+    kind="bar",
+    figsize=(10, 8),
+)
+ax.set_title("Fuzzer X Performance Across Sessions")
+ax.set_xlabel("Fuzzing Sessions")
+ax.set_ylabel("# of Events")
+plt.xticks(rotation=45)
+plt.tight_layout()
