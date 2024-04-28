@@ -116,7 +116,7 @@ class Mutator():
             generate_extreme_string,
         ]
 
-        probs = [0.3, 0.3, 0.3, 0.1]
+        probs = [0.33, 0.33, 0.33, 0.01]
 
         mutator = random.choices(mutators, probs)[0]
         return mutator(original_str)

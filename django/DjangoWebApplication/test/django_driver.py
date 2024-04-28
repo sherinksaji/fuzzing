@@ -1,7 +1,7 @@
 import threading
 
 import requests
-from fuzzer import Fuzzer
+from AFL_base import Fuzzer
 import json
 import os
 
