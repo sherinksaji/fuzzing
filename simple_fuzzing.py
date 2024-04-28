@@ -98,28 +98,49 @@ class CoAPFuzzer(AFL_Fuzzer):
                 if seed_input.method in ['GET', 'POST', 'PUT', 'DELETE']:
                     # Compatible methods for CON messages
                     # Perform test or validation specific to CON messages
-                    print("Performing test for CON message with method:", seed_input.method)
+                    message_="Performing test for CON message with method:{}".format(seed_input.method)
+                    print(message_)
+                    with open('error.txt', 'a') as file:
+                        file.write(message_ + '\n')
                 else:
-                    print("Error: Incompatible method", seed_input.method, "for CON message type.")
+                    error_message = "Error: Incompatible method '{}' for CON message type.".format(seed_input.method)
+                    print(error_message)
+                    with open('error.txt', 'a') as file:
+                        file.write(error_message + '\n')
             elif message_type == defines.Types['NON']:
                 # Non-confirmable message type
                 if seed_input.method in ['GET', 'OBSERVE']:
                     # Compatible methods for NON messages
                     # Perform test or validation specific to NON messages
-                    print("Performing test for NON message with method:", seed_input.method)
+                    message_="Performing test for NON message with method:'{}'".format(seed_input.method)
+                    print(message_)
+                    with open('error.txt', 'a') as file:
+                        file.write(message_ + '\n')
                 else:
+                    error_message = "Error: Incompatible method '{}' for NON message type.".format(seed_input.method)
                     print("Error: Incompatible method", seed_input.method, "for NON message type.")
+                    with open('error.txt', 'a') as file:
+                        file.write(error_message + '\n')
             elif message_type == defines.Types['ACK']:
                 # Acknowledgement message type
                 # Perform actions specific to ACK messages
+                message_="Received ACK message."
                 print("Received ACK message.")
+                with open('error.txt', 'a') as file:
+                    file.write(message_ + '\n')
             elif message_type == defines.Types['RST']:
                 # Reset message type
                 # Perform actions specific to RST messages
+                message_="Received RST message."
                 print("Received RST message.")
+                with open('error.txt', 'a') as file:
+                    file.write(message_ + '\n')
         except Exception as e:
             # Print any errors during bug testing
-            print("Error during bug testing:", e)
+            message_="Error during bug testing:", e
+            print(message_)
+            with open('error.txt', 'a') as file:
+                file.write(message_ + '\n')
 
     def fuzz_and_send_requests(self, num_requests, num_bytes, token_message_length):
         for _ in range(num_requests):
@@ -175,7 +196,7 @@ def main():
     logger = logging.getLogger(__name__)
     fuzzer = CoAPFuzzer(host, port)
     #while(1):
-    seedQlength=10
+    seedQlength=1000
     fuzzer.init_seedQ(seedQlength)
 
     try:
