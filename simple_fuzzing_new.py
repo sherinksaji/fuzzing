@@ -55,6 +55,15 @@ class CoAPFuzzer(AFL_Fuzzer):
         # Modify the type of CoAP messages sent by the fuzzer
         # Example: Change between CON, NON, ACK, RST
         return self.mutator.mutate_arr(self.msgtypes)
+    
+    def mutate_t(self, t, index):
+        t.payload=self.fuzz_payload(t.payload)
+        t.header=self.fuzz_header()
+        t.resourcepath=self.fuzz_resource_path()
+        t.method=self.fuzz_method()
+        t.msgtype=self.fuzz_message_type()
+        input_object = CoAPInput(t.payload, t.header, t.resourcepath, t.msgtype, t.method)
+        return input_object
         
     def fuzz_header(self):
         # Generate fuzzed CoAP header
@@ -70,17 +79,15 @@ class CoAPFuzzer(AFL_Fuzzer):
         header_bytes += token.encode('utf-8')
         return header_bytes
     
-    def isInterestingCoAP(self, path):
+    def isInterestingCoAP(self,seed_input):
         # Get coverage data (assuming you have a method to retrieve coverage data)
-        self.isInteresting.append(path)
+        coverage_data = self.analyzer.analyze_coverage()
+        self.pathCoverage.append(coverage_data)
         # Use isInteresting method from AFL_Fuzzer
-        if path not in self.interestingPaths:
-            self.interestingPaths.append(path)
+        if self.isInteresting(coverage_data):
             #print("Coverage is interesting!")
             #mutated_input = self.mutate_t(seed_input, 0)
-            # self.seedQ.append(mutated_input)
-            return True
-        return False
+            self.seedQ.append(seed_input)
 
     def runTestRevealsCrashOrBug(self, seed_input, response):
         try:
@@ -140,69 +147,48 @@ class CoAPFuzzer(AFL_Fuzzer):
             # print(_)
             #print("Seed queue length before accessing seed input:", len(self.seedQ))
             seed_input = self.seedQ[0]
-            if seed_input is not None:
-                E = self.AssignEnergy(seed_input)
-                
-                for i in range(1,E):
-                    random_payload = self.fuzz_payload(self.original_payload)
+            #seed_input.print_CoAPInput()
+            if seed_input is not None:  # Check if seed_input is not None
+                try:
+                    random_payload = self.fuzz_payload(seed_input.payload)
                     random_header = self.fuzz_header()
                     random_resourcepath = self.fuzz_resource_path()
                     random_type=self.fuzz_message_type()
                     random_method=self.fuzz_method()
                     # Create CoAPInput object with random values
-                    t_prime = CoAPInput(random_payload, random_header, random_resourcepath, random_type, random_method) # fuzzed input
-                    # Append the CoAPInput object to seedQ
-                    # self.seedQ.append(input_object)
-                    #seed_input.print_CoAPInput()
-                    
-                    # fuzzing
-                    try:
-                        resource_path = t_prime.resourcepath
-                        fuzzed_header = t_prime.header
-                        fuzzed_payload = t_prime.payload
-                        fuzzed_method = t_prime.method
-                        fuzzed_msgtype = t_prime.msgtype
-                        print("Fuzzing payload:", repr(fuzzed_payload))
-                        # print("Fuzzed message type:", fuzzed_msgtype)  # Print fuzzed message type
-                        if fuzzed_method == 'GET':
-                            response = self.client.get(resource_path, payload=fuzzed_payload, header=fuzzed_header ,msg_type=defines.Types[fuzzed_msgtype])
-                        elif fuzzed_method == 'POST':
-                            response = self.client.post(resource_path, payload=fuzzed_payload, header=fuzzed_header, msg_type=defines.Types[fuzzed_msgtype])
-                        elif fuzzed_method == 'PUT':
-                            response = self.client.put(resource_path, payload=fuzzed_payload, header=fuzzed_header,msg_type=defines.Types[fuzzed_msgtype])
-                        elif fuzzed_method == 'DELETE':
-                            response = self.client.delete(resource_path, payload=fuzzed_payload, header=fuzzed_header,msg_type=defines.Types[fuzzed_msgtype])
-                        elif fuzzed_method == 'OBSERVE':
-                            response = self.client.observe(resource_path, callback=None, msg_type=defines.Types[fuzzed_msgtype])
-                        elif fuzzed_method == 'DISCOVER':
-                            response = self.client.discover(callback=None, msg_type=defines.Types[fuzzed_msgtype])
-                        print(response.pretty_print())
+                    input_object = CoAPInput(random_payload, random_header, random_resourcepath, random_type, random_method)
+                    resource_path = input_object.resourcepath
+                    fuzzed_header = input_object.header
+                    fuzzed_payload = input_object.payload
+                    fuzzed_method = input_object.method
+                    fuzzed_msgtype = input_object.msgtype
+                    print("Fuzzing payload:", repr(fuzzed_payload))
+                    # print("Fuzzed message type:", fuzzed_msgtype)  # Print fuzzed message type
+                    if fuzzed_method == 'GET':
+                        response = self.client.get(resource_path, payload=fuzzed_payload, header=fuzzed_header ,msg_type=defines.Types[fuzzed_msgtype])
+                    elif fuzzed_method == 'POST':
+                        response = self.client.post(resource_path, payload=fuzzed_payload, header=fuzzed_header, msg_type=defines.Types[fuzzed_msgtype])
+                    elif fuzzed_method == 'PUT':
+                        response = self.client.put(resource_path, payload=fuzzed_payload, header=fuzzed_header,msg_type=defines.Types[fuzzed_msgtype])
+                    elif fuzzed_method == 'DELETE':
+                        response = self.client.delete(resource_path, payload=fuzzed_payload, header=fuzzed_header,msg_type=defines.Types[fuzzed_msgtype])
+                    elif fuzzed_method == 'OBSERVE':
+                        response = self.client.observe(resource_path, callback=None, msg_type=defines.Types[fuzzed_msgtype])
+                    elif fuzzed_method == 'DISCOVER':
+                        response = self.client.discover(callback=None, msg_type=defines.Types[fuzzed_msgtype])
+                    print(response.pretty_print())
 
-                        # Check for crash or bug
-                        coverage_data = self.analyzer.analyze_coverage()
-                        path = self.process_coverage(coverage_data) 
+                    # Check for crash or bug
+                    self.runTestRevealsCrashOrBug(input_object,response)
+                    self.isInterestingCoAP(input_object)
+                    # Remove the first input from seedQ
+                    self.seedQ.pop(0)
 
-                        for i, tup in enumerate(self.pathCoverage):
-                            if path == tup[1]:
-                                tup[0].append(t_prime)
-                                tup[1] += 1
-                                self.pathCoverage[0][1] += 1
-                                changed = True
-                            if i == len(self.pathCoverage) - 1 and changed != True:
-                               self.pathCoverage.append((path, 1))   
-
-                        self.runTestRevealsCrashOrBug(seed_input,response)
-                        interesting = self.isInterestingCoAP(seed_input, path)
-                        if interesting == True:
-                            self.seedQ.append(t_prime)
-                        # Remove the first input from seedQ
-                        # self.seedQ.pop(0)
-
-                    except Exception as e:
-                        # Log the error
-                        print("Fuzzing error:", e)
+                except Exception as e:
+                    # Log the error
+                    print("Fuzzing error:", e)
             else:
-                    print("Seed input is None")
+                print("Seed input is None")
 
 
     def close_connection(self):
@@ -217,7 +203,7 @@ def main():
     logger = logging.getLogger(__name__)
     fuzzer = CoAPFuzzer(host, port)
     #while(1):
-    seedQlength=1000
+    seedQlength=100
     fuzzer.init_seedQ(seedQlength)
 
     try:
@@ -227,9 +213,9 @@ def main():
             fuzzer.analyzer.start_coverage()
             fuzzer.fuzz_and_send_requests(num_requests=1, num_bytes=5,token_message_length=8)
             #print("Coverage data for input", number, ":")
-            #coverage_data_show=fuzzer.analyzer.analyze_coverage()
+            coverage_data_show=fuzzer.analyzer.analyze_coverage()
             #print(coverage_data_show)
-            #coverage_data = fuzzer.analyzer.stop_coverage()
+            coverage_data = fuzzer.analyzer.stop_coverage()
             number+=1
             #print("Coverage data for input", number, ":", coverage_data)
 
