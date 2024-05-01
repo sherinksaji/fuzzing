@@ -1,56 +1,17 @@
-BUG FOUND at WRITE Handle 0x0004 --> Bytes=02, Val=a701.This descriptor of handle 0x0004 does not have WRITE permission
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=02, Val=a701.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND at WRITE Handle 0x0013 --> Bytes=02, Val=a701.This descriptor of handle 0x0013 does not have WRITE permission
-BUG FOUND at WRITE Handle 0x0018 --> Bytes=02, Val=a701.This descriptor of handle 0x0018 does not have WRITE permission
-BUG FOUND at WRITE Handle 0x0023 --> Bytes=02, Val=a701.This descriptor of handle 0x0023 does not have WRITE permission
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=02, Val=a701.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
+BUG FOUND at WRITE Handle 0x0006 --> Bytes=00, Val=.This characteristic of handle 0x0006 does not have WRITE permission
+BUG FOUND  at WRITE Handle 0x002D --> Bytes=00, Val=.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
 BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=02, Val=a701.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
+BUG FOUND  at WRITE Handle 0x0030 --> Bytes=00, Val=.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
 BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=03, Val=a70140.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=03, Val=a70140.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
+CRASH/BUG FOUND  at WRITE Handle 0x0037 --> Bytes=00, Val=. . bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+CRASH/BUG FOUND  at WRITE Handle 0x0039 --> Bytes=00, Val=. . bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.
+BUG FOUND at WRITE Handle 0x0006 --> Bytes=00, Val=.This characteristic of handle 0x0006 does not have WRITE permission
+BUG FOUND  at WRITE Handle 0x002D --> Bytes=00, Val=.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
 BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=03, Val=a70140.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
+BUG FOUND  at WRITE Handle 0x0030 --> Bytes=00, Val=.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
 BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND at WRITE Handle 0x0004 --> Bytes=02, Val=a701.This descriptor of handle 0x0004 does not have WRITE permission
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=02, Val=a701.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND at WRITE Handle 0x0013 --> Bytes=02, Val=a701.This descriptor of handle 0x0013 does not have WRITE permission
-BUG FOUND at WRITE Handle 0x0018 --> Bytes=02, Val=a701.This descriptor of handle 0x0018 does not have WRITE permission
-BUG FOUND at WRITE Handle 0x0023 --> Bytes=02, Val=a701.This descriptor of handle 0x0023 does not have WRITE permission
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=02, Val=a701.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=02, Val=a701.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=03, Val=00a701.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=03, Val=00a701.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=03, Val=00a701.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=03, Val=04a701.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=03, Val=04a701.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=03, Val=04a701.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=04, Val=04a7018f.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=04, Val=04a7018f.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=04, Val=04a7018f.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=11, Val=04a7018f792e7309932c47.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=11, Val=04a7018f792e7309932c47.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=11, Val=04a7018f792e7309932c47.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0035 --> Bytes=11, Val=04a7018f792e7309932c47.  This characteristic of handle 0x0035 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=12, Val=04a7018f792e730944932c47.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=12, Val=04a7018f792e730944932c47.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=12, Val=04a7018f792e730944932c47.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0035 --> Bytes=12, Val=04a7018f792e730944932c47.  This characteristic of handle 0x0035 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x0006 --> Bytes=12, Val=04a7018f792e7309449b2c47.  This characteristic of handle 0x0006 has WRITE permission, but is not being WRITTEN to
-BUG FOUND  at WRITE Handle 0x002D --> Bytes=12, Val=04a7018f792e7309449b2c47.  This characteristic of handle 0x002D has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x002D has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0030 --> Bytes=12, Val=04a7018f792e7309449b2c47.  This characteristic of handle 0x0030 has WRITE permission, but is not being WRITTEN to
-BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not being READ
-BUG FOUND  at WRITE Handle 0x0035 --> Bytes=12, Val=04a7018f792e7309449b2c47.  This characteristic of handle 0x0035 has WRITE permission, but is not being WRITTEN to
+CRASH/BUG FOUND  at WRITE Handle 0x0037 --> Bytes=00, Val=. . bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
+CRASH/BUG FOUND  at WRITE Handle 0x0039 --> Bytes=00, Val=. . bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.

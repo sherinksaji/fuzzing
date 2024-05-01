@@ -222,6 +222,12 @@ class BLE_Fuzzer(
     def mutate_t(self, t_prime):
         mutator = Mutator()
         t_prime = mutator.mutate_byte_list(t_prime, self.usable_mutators)
+        # t_prime = [0x01]  # To reproduce bugs just related to input [0x01] comment out this line
+        # t_prime = []  # To reproduce bugs just related to input [] comment out this line
+        # Look at bugAndCrashReport
+        # The bugs and crashes will be repeated for each run until u terminate the fuzzer.
+        # So just terminate the fuzzer after the first time the input is run.
+        # But keep in mind that the bugAndCrashReport.txt will be deleted for everytime python3 ble_fuzzer.py is run.
         return t_prime
 
     async def runTestRevealsCrashOrBug(self, t_prime):

@@ -1,5 +1,5 @@
 {
     "bug_present": true,
-    "crash": false,
-    "lcovFilename": "lcov_1714536843839371242.info"
+    "crash": true,
+    "lcovFilename": "lcov_1714538461973012890.info"
 }
