@@ -40,6 +40,9 @@ async def write_target(target, attribute, bytes, PermissionsAct):
                 "green",
             )
         )
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
+        # BCOS IF TOO MANY THINGS WERE CONSIDERED A BUG THERE WOULD BARELY BE ANY INTERESTING CASES
+        # BUT UNCOMMENT NOW FOR THE SAKE OF BUG REPRODUCTION
         if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") == -1:
             print(
                 color(
@@ -51,7 +54,7 @@ async def write_target(target, attribute, bytes, PermissionsAct):
             addToCrashAndBugReport(
                 f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
             )
-
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") == -1:
             print(
                 color(
@@ -61,9 +64,9 @@ async def write_target(target, attribute, bytes, PermissionsAct):
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND. WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+                f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
             )
-
+        # WAS SURE THAT IS A BUG, INCLUDED IN FUZZ EXPERIMENT
         if split[0][0] == "C" and (
             PermissionsAct[handle][1].find("|WRITE|") == -1
             or (
@@ -73,13 +76,13 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         ):
             print(
                 color(
-                    f"BUG FOUND. WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND. WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+                f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This characteristic of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
             )
 
         return True
@@ -88,6 +91,7 @@ async def write_target(target, attribute, bytes, PermissionsAct):
             color(f"[!]  Cannot write attribute 0x{attribute.handle:04X}:", "yellow"),
             error,
         )
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") != -1:
             print(
                 color(
@@ -99,19 +103,19 @@ async def write_target(target, attribute, bytes, PermissionsAct):
             addToCrashAndBugReport(
                 f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
             )
-
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") != -1:
             print(
                 color(
-                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    f"BUG FOUND  at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.  This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+                f"BUG FOUND  at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.  This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
             )
-
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         if split[0][0] == "C" and (
             PermissionsAct[handle][1].find("|WRITE|") != -1
             or (
@@ -121,15 +125,15 @@ async def write_target(target, attribute, bytes, PermissionsAct):
         ):
             print(
                 color(
-                    f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    f"BUG FOUND  at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.  This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
                     "red",
                 )
             )
             result_dict["bug_present"] = True
             addToCrashAndBugReport(
-                f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+                f"BUG FOUND  at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.  This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
             )
-
+    # CONFIRM BUG
     except asyncio.exceptions.TimeoutError:
         print(color("[X] Write Timeout", "red"))
         # Handle the GATT timeout error gracefully here
@@ -138,13 +142,13 @@ async def write_target(target, attribute, bytes, PermissionsAct):
             kill_all_zephyr_processes()
         zephyr_died()
         addToCrashAndBugReport(
-            f"BUG FOUND. asyncio.exceptions.TimeoutError for 0x{attribute.handle:04X}\n"
+            f"BUG FOUND  at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. asyncio.exceptions.TimeoutError for 0x{attribute.handle:04X}\n"
         )
-
+    # CONFIRM BUG
     except TimeoutError:
         print(color("[X] Write Timeout", "red"))
         addToCrashAndBugReport(
-            f"BUG FOUND. bumble.core.TimeoutError for 0x{attribute.handle:04X}. Zephyr may have crashed.\n"
+            f"CRASH/BUG FOUND  at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. . bumble.core.TimeoutError for 0x{attribute.handle:04X}. Zephyr may have crashed.\n"
         )
         zephyr_died()
         if zephyr_died == False:
@@ -175,7 +179,7 @@ async def read_target(target, attribute, PermissionsAct):
                 "cyan",
             )
         )
-
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") == -1:
             print(
                 color(
@@ -187,7 +191,7 @@ async def read_target(target, attribute, PermissionsAct):
             addToCrashAndBugReport(
                 f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission\n"
             )
-
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") == -1:
             print(
                 color(
@@ -199,7 +203,7 @@ async def read_target(target, attribute, PermissionsAct):
             addToCrashAndBugReport(
                 f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission\n"
             )
-
+        # WAS SURE THAT IS A BUG, INCLUDED IN FUZZ EXPERIMENT
         if split[0][0] == "C" and PermissionsAct[handle][1].find("READ") == -1:
             print(
                 color(
@@ -218,6 +222,7 @@ async def read_target(target, attribute, PermissionsAct):
             color(f"[!]  Cannot read attribute 0x{attribute.handle:04X}:", "yellow"),
             error,
         )
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") != -1:
             print(
                 color(
@@ -229,7 +234,7 @@ async def read_target(target, attribute, PermissionsAct):
             addToCrashAndBugReport(
                 f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
             )
-
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") != -1:
             print(
                 color(
@@ -241,7 +246,7 @@ async def read_target(target, attribute, PermissionsAct):
             addToCrashAndBugReport(
                 f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
             )
-
+        # WAS COMMENTED OUT DURING FUZZING EXPERIMENT BCOS WAS NOT SURE IF IT IS A BUG OR NOT
         if split[0][0] == "C" and PermissionsAct[handle][1].find("READ") != -1:
             print(
                 color(
@@ -253,7 +258,7 @@ async def read_target(target, attribute, PermissionsAct):
             addToCrashAndBugReport(
                 f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
             )
-
+    # CONFIRM BUG
     except TimeoutError:
         print(color("[!] Read Timeout"))
         addToCrashAndBugReport(
@@ -350,18 +355,6 @@ def find_pid(process_name):
     return None
 
 
-# def zephyr_died():
-#     zephyr_pid = find_pid("zephyr.exe")
-
-#     # Kill the process with the obtained pid
-#     if zephyr_pid:
-#         print("Zephyr still alive")
-#         return False
-#     else:
-#         print("Zephyr died")
-#         return True
-
-
 def zephyr_died():
     """
     Check if the specific zephyr process with the given command line arguments has died.
@@ -387,30 +380,6 @@ def zephyr_died():
 
     print("Zephyr died")
     return True
-
-
-def wait_for_process_to_die(pid, timeout=10):
-    """Waits for the process with the given pid to terminate."""
-    try:
-        process = psutil.Process(pid)
-        process.terminate()  # Sends SIGTERM
-        process.wait(timeout=timeout)  # Waits for the process to terminate
-        print(f"Process {pid} has been terminated.")
-    except psutil.NoSuchProcess:
-        print(f"No such process with pid {pid} to terminate.")
-    except psutil.TimeoutExpired:
-        print(f"Process {pid} did not terminate in {timeout} seconds.")
-        process.kill()  # Sends SIGKILL as a last resort
-        print(f"Process {pid} has been killed.")
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-
-
-def kill_zephyr():
-    zephyr_pid = find_pid("zephyr.exe")
-    if zephyr_pid:
-        print("Attempting to terminate zephyr.exe")
-        wait_for_process_to_die(zephyr_pid)
 
 
 def kill_all_zephyr_processes():
