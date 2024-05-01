@@ -220,6 +220,8 @@ class Mutator:
         def add_random_byte(byte_list):
             index = random.randint(0, len(byte_list))
             byte_list.insert(index, random.randint(0, 255))
+            while len(byte_list) > 62:
+                byte_list.pop(0)
             return byte_list
 
         def remove_random_bytes(byte_list):
@@ -248,19 +250,27 @@ class Mutator:
         def havoc(byte_list):
 
             byte_list.insert(0, 0xFF)
+            while len(byte_list) > 62:
+                byte_list.pop(-1)
             return byte_list
 
         def insert1(byte_list):
             byte_list.insert(0, 1)
+            while len(byte_list) > 62:
+                byte_list.pop(-1)
             return byte_list
 
         def insert0(byte_list):
             byte_list.insert(0, 0)
+            while len(byte_list) > 62:
+                byte_list.pop(-1)
             return byte_list
 
         def extend_with_random_bytes(byte_list):
             num_bytes = random.randint(1, 10)
             byte_list.extend(random.randint(0, 255) for _ in range(num_bytes))
+            while len(byte_list) > 62:
+                byte_list.pop(0)
             return byte_list
 
         def empty(byte_list):
@@ -286,8 +296,6 @@ class Mutator:
             elif i == 7:
                 mutators.append(extend_with_random_bytes)
 
-        print(mutators)
-
         mutator = random.choices(mutators)[0]
         # print(mutator)
         # probability = random.random()
@@ -297,11 +305,11 @@ class Mutator:
 
 
 # Test
-mutator = Mutator()
-byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-print(byte_list)
-mutated = mutator.mutate_byte_list(byte_list, [7])
-print(mutated)
+# mutator = Mutator()
+# byte_list = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+# print(byte_list)
+# mutated = mutator.mutate_byte_list(byte_list, [7])
+# print(mutated)
 
 
 # byte_string = bytes([65, 66, 67, 68, 69])
@@ -313,3 +321,72 @@ print(mutated)
 # print(byte_array)
 # ba = mutator.mutate_bytearray(byte_array)
 # print(ba)
+
+# print(
+#     len(
+#         [
+#             234,
+#             0,
+#             173,
+#             164,
+#             148,
+#             0,
+#             108,
+#             0,
+#             0,
+#             0,
+#             47,
+#             54,
+#             206,
+#             74,
+#             207,
+#             252,
+#             0,
+#             123,
+#             0,
+#             195,
+#             172,
+#             113,
+#             0,
+#             0,
+#             0,
+#             167,
+#             1,
+#             1,
+#             1,
+#             1,
+#             7,
+#             180,
+#             1,
+#             236,
+#             236,
+#             1,
+#             52,
+#             1,
+#             70,
+#             1,
+#             1,
+#             1,
+#             1,
+#             211,
+#             1,
+#             1,
+#             233,
+#             1,
+#             210,
+#             1,
+#             45,
+#             132,
+#             164,
+#             1,
+#             1,
+#             119,
+#             1,
+#             242,
+#             44,
+#             1,
+#             1,
+#             1,
+#         ]
+#     )
+# )

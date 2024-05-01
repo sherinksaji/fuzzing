@@ -31,7 +31,7 @@ import subprocess
 import random
 import psutil
 import pandas as pd
-
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -268,50 +268,79 @@ class BLE_Fuzzer(
         return runRevealsCrashOrBug, coverage
 
 
-# async def run_fuzzer():
-#     count = 0
-#     t_prime = [0x01]
-#     while count < 10:
-
-#         mutator = Mutator()
-#         t_prime = mutator.mutate_byte_list(t_prime)
-#         await runTestRevealsCrashOrBug(t_prime)
-
-#         count += 1
-
-
 # Call the asynchronous function
 delete_file("bugAndCrashReport.txt")
 delete_file("result.json")
 delete_file("scan_signal.txt")
 seedQ = [([0x01], None, None)]
+bleFuzzer = BLE_Fuzzer(seedQ)
+asyncio.run(bleFuzzer.fuzz())
 
-sessions = ["Session #1", "Session #2"]
-# sessions = ["Session #1", "Session #2", "Session #3", "Session #4", "Session #5"]
-numCrashOrBugLs = []
-numInterestingTestCasesLs = []
 
-for i in range(2):
-    bleFuzzer = BLE_Fuzzer(seedQ)
-    asyncio.run(bleFuzzer.fuzz())
-    numCrashOrBugLs.append(bleFuzzer.numberOfCrashOrBug)
-    numInterestingTestCasesLs.append(len(bleFuzzer.interestingPaths))
+# async def getMutatorStats():
+#     dataframes = []
 
-data = {
-    "Sessions": sessions,
-    "Interesting Tests": numCrashOrBugLs,
-    "Bugs and Crashes": numInterestingTestCasesLs,
-}
+#     for i in range(8):
+#         if i == 4:
+#             continue
+#         delete_file("bugAndCrashReport.txt")
+#         delete_file("result.json")
+#         delete_file("scan_signal.txt")
+#         seedQ = [([0x01] * 10, None, None)]
+#         bleFuzzer = BLE_Fuzzer(seedQ, [i])
+#         await bleFuzzer.fuzz()
+#         dataframes.append(bleFuzzer.rq1_df)
+#     bleFuzzer = BLE_Fuzzer(seedQ, [0, 1, 2, 3, 4, 5, 6, 7, 8])
+#     await bleFuzzer.fuzz()
+#     dataframes.append(bleFuzzer.rq1_df)
 
-df = pd.DataFrame(data)
-ax = df.plot(
-    x="Sessions",
-    y=["Interesting Tests", "Bugs and Crashes"],
-    kind="bar",
-    figsize=(10, 8),
-)
-ax.set_title("Fuzzer X Performance Across Sessions")
-ax.set_xlabel("Fuzzing Sessions")
-ax.set_ylabel("# of Events")
-plt.xticks(rotation=45)
-plt.tight_layout()
+#     # Create a figure and a single axes
+#     fig, ax = plt.subplots(figsize=(10, 8))
+
+#     # Colors and labels can be customized as needed
+#     colors = [
+#         "#e6194B",
+#         "#3cb44b",
+#         "#ffe119",
+#         "#4363d8",
+#         "#f58231",
+#         "#911eb4",
+#         "#46f0f0",
+#         "#f032e6",
+#         "#aaffc3",
+#     ]  # Generate 9 colors from the 'viridis' colormap
+#     # "Number of interesting test cases", "Number of tests"
+#     # Plotting each DataFrame
+#     for i, df in enumerate(dataframes):
+#         mutator = None
+#         if i == 0:
+#             mutator = "insert1"
+#         elif i == 1:
+#             mutator = "insert0"
+#         elif i == 2:
+#             mutator = "replace_random_byte"
+#         elif i == 3:
+#             mutator = "add_random_byte"
+#         elif i == 4:
+#             mutator = "flip_random_bit"
+#         elif i == 5:
+#             mutator = "havoc"
+#         elif i == 6:
+#             mutator = "extend_with_random_bytes"
+#         elif i == 7:
+#             mutator = "all"
+#         ax.plot(
+#             df["Number of tests"],
+#             df["Number of interesting test cases"],
+#             label=mutator,
+#             color=colors[i],
+#         )
+
+#     # Customizing the plot
+#     ax.set_title("Multiple DataFrames Plot")
+#     ax.set_xlabel("Number of tests")
+#     ax.set_ylabel("Number of interesting test cases")
+#     ax.legend(title="DataFrame Index")
+
+#     # Show the plot
+#     plt.show()
