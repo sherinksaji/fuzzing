@@ -40,29 +40,29 @@ async def write_target(target, attribute, bytes, PermissionsAct):
                 "green",
             )
         )
-        # if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") == -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
-        #     )
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") == -1:
+            print(
+                color(
+                    f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+            )
 
-        # elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") == -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
-        #     )
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") == -1:
+            print(
+                color(
+                    f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}.This descriptor of handle 0x{attribute.handle:04X} does not have WRITE permission\n"
+            )
 
         if split[0][0] == "C" and (
             PermissionsAct[handle][1].find("|WRITE|") == -1
@@ -88,47 +88,47 @@ async def write_target(target, attribute, bytes, PermissionsAct):
             color(f"[!]  Cannot write attribute 0x{attribute.handle:04X}:", "yellow"),
             error,
         )
-        # if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") != -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
-        #     )
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("WRITE") != -1:
+            print(
+                color(
+                    f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND at WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}. This service of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+            )
 
-        # elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") != -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
-        #     )
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("WRITE") != -1:
+            print(
+                color(
+                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+            )
 
-        # if split[0][0] == "C" and (
-        #     PermissionsAct[handle][1].find("|WRITE|") != -1
-        #     or (
-        #         PermissionsAct[handle][1].find("|WRITE") != -1
-        #         and PermissionsAct[handle][1].find("|WRITE_|") == -1
-        #     )
-        # ):
-        #     print(
-        #         color(
-        #             f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
-        #     )
+        if split[0][0] == "C" and (
+            PermissionsAct[handle][1].find("|WRITE|") != -1
+            or (
+                PermissionsAct[handle][1].find("|WRITE") != -1
+                and PermissionsAct[handle][1].find("|WRITE_|") == -1
+            )
+        ):
+            print(
+                color(
+                    f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has WRITE permission, but is not being WRITTEN to\n"
+            )
 
     except asyncio.exceptions.TimeoutError:
         print(color("[X] Write Timeout", "red"))
@@ -176,29 +176,29 @@ async def read_target(target, attribute, PermissionsAct):
             )
         )
 
-        # if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") == -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission\n"
-        #     )
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") == -1:
+            print(
+                color(
+                    f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This service of handle 0x{attribute.handle:04X} does not have READ permission\n"
+            )
 
-        # elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") == -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission\n"
-        #     )
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") == -1:
+            print(
+                color(
+                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} does not have READ permission\n"
+            )
 
         if split[0][0] == "C" and PermissionsAct[handle][1].find("READ") == -1:
             print(
@@ -218,41 +218,41 @@ async def read_target(target, attribute, PermissionsAct):
             color(f"[!]  Cannot read attribute 0x{attribute.handle:04X}:", "yellow"),
             error,
         )
-        # if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") != -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
-        #     )
+        if split[0][0] == "S" and PermissionsAct[handle][1].find("READ") != -1:
+            print(
+                color(
+                    f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This service of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
+            )
 
-        # elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") != -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
-        #     )
+        elif split[0][0] == "D" and PermissionsAct[handle][1].find("READ") != -1:
+            print(
+                color(
+                    f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This descriptor of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
+            )
 
-        # if split[0][0] == "C" and PermissionsAct[handle][1].find("READ") != -1:
-        #     print(
-        #         color(
-        #             f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
-        #             "red",
-        #         )
-        #     )
-        #     result_dict["bug_present"] = True
-        #     addToCrashAndBugReport(
-        #         f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
-        #     )
+        if split[0][0] == "C" and PermissionsAct[handle][1].find("READ") != -1:
+            print(
+                color(
+                    f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n",
+                    "red",
+                )
+            )
+            result_dict["bug_present"] = True
+            addToCrashAndBugReport(
+                f"BUG FOUND. This characteristic of handle 0x{attribute.handle:04X} has READ permission, but is not being READ\n"
+            )
 
     except TimeoutError:
         print(color("[!] Read Timeout"))
