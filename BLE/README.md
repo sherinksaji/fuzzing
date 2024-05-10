@@ -50,6 +50,7 @@ By providing a systematic and automated approach to fuzzing, our framework enabl
 
 ```bash
 git clone https://github.com/sherinksaji/fuzzing.git
+cd fuzzing
 sudo apt update
 sudo apt install gnome-terminal
 cd BLE
