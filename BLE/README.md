@@ -50,6 +50,10 @@ By providing a systematic and automated approach to fuzzing, our framework enabl
 
 ```bash
 git clone https://github.com/sherinksaji/fuzzing.git
+sudo apt update
+sudo apt install gnome-terminal
+cd BLE
+python3 ble_fuzzer.py
 ```
 
 Look at generated bugAndCrashReport.txt to see bugs generated.
