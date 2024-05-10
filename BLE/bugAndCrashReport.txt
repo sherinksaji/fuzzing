@@ -15,3 +15,4 @@ BUG FOUND. This characteristic of handle 0x0030 has READ permission, but is not 
 CRASH/BUG FOUND  at WRITE Handle 0x0037 --> Bytes=00, Val=. . bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
 bumble.core.TimeoutError for 0x0037. Zephyr may have crashed.
 CRASH/BUG FOUND  at WRITE Handle 0x0039 --> Bytes=00, Val=. . bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.
+bumble.core.TimeoutError for 0x0039. Zephyr may have crashed.

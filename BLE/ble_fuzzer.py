@@ -48,50 +48,6 @@ async def wait_for_scan_signal():
             await asyncio.sleep(0.5)  # Wait a bit before checking again
 
 
-# async def stream_output(process, identifier, log_file):
-#     """
-#     This function asynchronously reads each line of output from the process,
-#     writes it to a specified log file, and prints it with an identifier to distinguish between different processes.
-#     """
-#     # Open the log file in append mode
-#     with open(log_file, "a") as file:
-#         # Stream both stdout and stderr
-#         async for line in process.stdout:
-#             decoded_line = line.decode().strip()
-#             log_line = f"{identifier} - STDOUT: {decoded_line}\n"
-#             print(log_line, end="")  # Print to console
-#             file.write(log_line)  # Write to file
-#             file.flush()
-#         async for line in process.stderr:
-#             decoded_line = line.decode().strip()
-#             log_line = f"{identifier} - STDERR: {decoded_line}\n"
-#             print(log_line, end="")  # Print to console
-#             file.write(log_line)  # Write to file
-#             file.flush()
-
-
-# def start_runBLE():
-
-#     subprocess.Popen(["gnome-terminal", "--", "python3", "run_ble_orignal.py"])
-
-
-# async def run_command(command, identifier, log_file):
-#     """
-#     This function starts the subprocess for the given command,
-#     sets up streaming for its output, and waits for the process to complete.
-#     """
-#     process = await asyncio.create_subprocess_shell(
-#         command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-#     )
-
-#     # Set up tasks to handle stdout and stderr
-#     await stream_output(process, identifier, log_file)
-
-#     # Wait for the process to complete and return its exit status
-#     return_code = await process.wait()
-#     return return_code
-
-
 def bytes_to_hex_string(byte_list):
     return "".join([format(b, "02x") for b in byte_list])
 
@@ -238,18 +194,10 @@ class BLE_Fuzzer(
         delete_file("t_prime.txt")
         write_t_prime(t_prime)
 
-        # Start both commands asynchronously and log their outputs to different files
-        # task1 = asyncio.create_task(run_command(cmd1, "RunBLE", log_file1))
         start_ble_original()
         await wait_for_scan_signal()
         zephyr_pid = start_zephyr()
-        # top_command = f"top -p {zephyr_pid}"
-        # top_process = subprocess.Popen(top_command, shell=True, stdout=subprocess.PIPE)
-        # top_output = top_process.communicate()[0].decode("utf-8")
-        # print("Top output:")
 
-        # top_process.kill()
-        # print(top_output)
         while is9000Alive():
             await asyncio.sleep(0.5)
         filename = "result.json"
