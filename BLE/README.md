@@ -10,11 +10,9 @@ The foundation of our framework, providing AFL methods like ChooseNext, AssignEn
 
 A modular Mutator class designed to mutate test inputs, t, intelligently, accommodating various data types such as strings, integers, and arrays.
 
-This part of the repo focuses on fuzzing BLE Zephyr stack.
-
 ## BLE_Fuzzer Class
 
-An extension of the AFL_base class, tailored specifically for BLE fuzzing. It incorporates abstract methods like mutate_t and runTestRevealsBug for BLE-specific operations.
+An extension of the AFL_base class, tailored specifically for BLE fuzzing. It incorporates abstract methods like mutate_t and runTestRevealsBug for BLE-specific operations.This part of the repo focuses on fuzzing BLE Zephyr stack.
 
 ## run_ble_original.py
 
@@ -47,3 +45,13 @@ Bugs or crashes detected during testing are reported and analyzed, aiding in the
 The framework generates comprehensive reports detailing test outcomes, coverage metrics, and detected bugs, empowering developers to enhance the reliability and security of their BLE implementations.
 
 By providing a systematic and automated approach to fuzzing, our framework enables efficient testing and validation of BLE-enabled devices and applications, ensuring robustness and resilience against potential security threats.
+
+**Set up to run:**
+
+```bash
+git clone https://github.com/sherinksaji/fuzzing.git
+```
+
+Look at generated bugAndCrashReport.txt to see bugs generated.
+
+See ble_fuzzer.py mutate_t function comments to see how can you can uncomment code to reproduce bugs easily.
